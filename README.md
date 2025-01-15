@@ -1,16 +1,20 @@
-# 🚀 Project Name
+<div align="center">
+
+# 🚀 **<span style='font-size: 3rem;'>Shop-main</span>**
 
 📚 Docs • 🛠️ Setup Instructions • ✨ Features
+
+</div>
 
 ---
 
 <div align="center">
-  <img src="https://i.pinimg.com/originals/57/c5/78/57c57898dbec056757561cab08689dec.gif" alt="Project Banner" width="70%">
+  <img src="https://i.pinimg.com/originals/57/c5/78/57c57898dbec056757561cab08689dec.gif" alt="Project Banner" width="100%">
 </div>
 
 ## 🌟 About
 
-"Project Name" is a Laravel-based application that offers a flexible light/dark interface experience and integrates modern technologies like Vite and Laravel Mix to optimize performance and the development process.
+"Shop-main" is a Laravel-based application that simplifies e-commerce management and integrates modern technologies to enhance user experience and development efficiency.
 
 ---
 
@@ -22,7 +26,7 @@
 
 ## 👋 Getting Started
 
-You can refer to the detailed setup instructions below.
+Follow the instructions below to set up and run the project.
 
 ### 📚 Installation
 
@@ -50,6 +54,7 @@ You can refer to the detailed setup instructions below.
 6. **Handle proxy issues (if any)**:
     ```bash
     php artisan config:cache
+    php artisan dump-autoload
     ```
 
 ---
@@ -71,22 +76,22 @@ You can refer to the detailed setup instructions below.
 
 ## 🤝 Contributing
 
-We welcome all contributions from the community!
+We welcome contributions from the community to improve this project!
 
 ### Clone Code
 
 ```bash
-git clone https://github.com/username/project-name.git
-cd project-name
+git clone https://github.com/username/shop-main.git
+cd shop-main
 ```
 
 ---
 
 ## 🌍 Community
 
--   🎤 [Twitter](https://twitter.com) - Follow us for the latest updates.
+-   🎤 [Twitter](https://twitter.com) - Follow us for updates.
 -   📚 [Documentation](https://github.com) - Detailed documentation.
--   💌 [Newsletter](https://example.com) - Subscribe for exclusive insights.
+-   💌 [Newsletter](https://example.com) - Subscribe for insights and tips.
 
 ---
 
