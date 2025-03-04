@@ -2,20 +2,18 @@
 
 namespace App\Models;
 
+// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Passport\HasApiTokens;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Schema;
-use Exception;
 
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
-     * Các trường có thể gán giá trị hàng loạt.
+     * The attributes that are mass assignable.
      *
      * @var array<int, string>
      */
@@ -42,9 +40,9 @@ class User extends Authenticatable
         'taxaddress',
         'status',
     ];
-
+    
     /**
-     * Các trường bị ẩn khi JSON hóa.
+     * The attributes that should be hidden for serialization.
      *
      * @var array<int, string>
      */
@@ -54,103 +52,67 @@ class User extends Authenticatable
     ];
 
     /**
-     * Các trường cần được chuyển đổi kiểu dữ liệu.
+     * The attributes that should be cast.
      *
      * @var array<string, string>
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
-        'password' => 'hashed', // Đảm bảo Laravel hỗ trợ thuộc tính này
+        'password' => 'hashed',
     ];
 
-    /**
-     * Xóa người dùng hoặc đặt trạng thái "inactive" tùy theo quyền.
-     *
-     * @param int $user_id
-     * @return int
-     */
-    public static function deleteUser($user_id)
-    {
+    public static function deleteUser($user_id){
         $user = User::find($user_id);
-
-        if (!$user) {
-            return -1; // Người dùng không tồn tại
-        }
-
-        if (auth()->user()->role == 'admin') {
+        if(auth()->user()->role =='admin')
+        {
             $user->delete();
-            return 1; // Đã xóa
-        } else {
+            return 1;
+        }
+        else{
             $user->status = "inactive";
             $user->save();
-            return 0; // Đánh dấu là không hoạt động
+            return 0;
         }
+            
+        
     }
-
-    /**
-     * Tạo người dùng mới và gán mã duy nhất.
-     *
-     * @param array $data
-     * @return User
-     */
     public static function c_create($data)
     {
-        $user = User::create($data);
-
-        // Gán mã người dùng
-        $user->code = "CUS" . sprintf('%09d', $user->id);
-        $user->save();
-
-        return $user;
+        
+        $pro = User::create($data);
+        $pro->code = "CUS" . sprintf('%09d',$pro->id);
+        $pro->save();
+       
+        if(env('KIOT_SYNC') == 1 && ($pro->role =="customer" ||$pro->role =="supcustomer") )
+        {
+            $kiotController = new \App\Http\Controllers\KiotController();
+            $kiotController->kiotAddCustomer($pro);
+        }
+       
+        return $pro;
     }
-
-    /**
-     * Cập nhật ngân sách người dùng (budget).
-     *
-     * @param float $operation (+1 hoặc -1)
-     * @param float $amount
-     * @param int|null $transaction_id
-     * @param string|null $type
-     * @return bool
-     * @throws Exception
-     */
-    public function update_budget($operation, $amount, $transaction_id = null, $type = null)
+    public static function c_update($s_data)
     {
-        // Kiểm tra nếu cột 'budget' tồn tại trong database
-        if (!Schema::hasColumn('users', 'budget')) {
-            throw new Exception("Cột 'budget' không tồn tại trong bảng users.");
+        
+        // $s_data->save();
+        if(env('KIOT_SYNC') == 1 && ($s_data->role =="customer" ||$s_data->role =="supcustomer") )
+        {
+            $kiotController = new \App\Http\Controllers\KiotController();
+            $kiotController->kiotUpdateCustomer($s_data);
         }
-
-        // Kiểm tra giá trị hợp lệ
-        if (!is_numeric($amount) || !in_array($operation, [-1, 1])) {
-            throw new Exception("Giá trị không hợp lệ cho update_budget.");
-        }
-
-        // Cập nhật ngân sách
-        $this->budget += $operation * $amount;
+       
+       
+    }
+    public function update_budget($operantion,$amount,$doc_id,$doc_type)
+    {
+        $this->budget = $this->budget + $operantion * $amount;
         $this->save();
-
-        // Ghi log
-        Log::info("User {$this->id} cập nhật ngân sách: {$this->budget} (operation: $operation, amount: $amount)");
-
-        return true;
+      
+        // if($operantion> 0)
+        //     \App\Models\Systrans::add_debt($doc_id,$amount,1,$doc_type);
+        // else
+        //     \App\Models\Systrans::remove_debt($doc_id,$amount,1,$doc_type);
     }
+}   
 
-    /**
-     * Cập nhật thông tin người dùng.
-     *
-     * @param array $data
-     * @return bool
-     */
-    public static function c_update($data)
-    {
-        $user = User::find($data['id']);
 
-        if ($user) {
-            $user->fill($data);
-            return $user->save();
-        }
-
-        return false;
-    }
-}

@@ -9,7 +9,7 @@ class WarehouseIn extends Model
 {
     use HasFactory;
     protected $fillable = ['code','version','wh_id', 'supplier_id', 'vendor_id','final_amount','discount_amount','paid_amount','is_paid','suptrans_id','paidtrans_id',
-    'shiptrans_id','cost_extra','debtbefore','debtafter','bankpayment','status'];
+    'shiptrans_id','cost_extra','debtbefore','debtafter','bankpayment','status','returned_ids'];
     public static function c_create($data)
     {
         $mw = WarehouseIn::create($data);
@@ -46,5 +46,21 @@ class WarehouseIn extends Model
         $outd =  \App\Models\DIn::create($data);
 
         return $outd;
+    }
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'supplier_id');
+    }
+    public function updateFinalAmount()
+    {
+        $details = \App\Models\WarehouseInDetail::where('doc_id',$this->id)->where('doc_type','wi')
+                ->where('is_deleted',0)->get();
+        $total = 0;
+        foreach($details as $detail)
+        {
+            $total += $detail->price * ($detail->qty - $detail->qty_returned);
+        }
+        $this->final_amount = $total;
+        $this->save();
     }
 }

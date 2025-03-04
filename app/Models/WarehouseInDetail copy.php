@@ -9,7 +9,7 @@ class WarehouseInDetail extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['doc_id','doc_type','wh_id', 'product_id', 'quantity','prebalance','price','qty_sold','expired_at','is_seri','benefit','qty_returned','is_deleted'];
+    protected $fillable = ['doc_id','doc_type','wh_id', 'product_id', 'quantity','prebalance','price','qty_sold','expired_at','is_seri','benefit'];
    
    //doctype: wi : nhập từ phiếu nhập, co: nhập từ pheieus combo, wp: nhập từ property, bi: ic, mi,pi; wr: return hàng hóa, id sẽ là của warehoutout
    
@@ -58,7 +58,7 @@ class WarehouseInDetail extends Model
         $detailpro->save();
     }
 
-    public static function deleteDetailProVersion($detailpro,$extraprice,$wh_id,$din_id )
+    public static function deleteDetailProVersion($detailpro,$extraprice,$wh_id,$in_id)
     {
 
         $product = \App\Models\Product::where('id',$detailpro->product_id)->first();
@@ -78,19 +78,19 @@ class WarehouseInDetail extends Model
             
             $inventory = \App\Models\Inventory::where('product_id',$detailpro->product_id)
                 ->where('wh_id',$wh_id)->first();
-            
+                
             $prebalance = $inventory->quantity;
 
             $inventory->quantity -= $detailpro->quantity;
             $product->save();
             $inventory->save();
         }
-        $data['doc_id']= $din_id;
-        $data['doc_type'] =  'din';
+        $data['doc_id']= $in_id;
+        $data['doc_type'] =  $detailpro->doc_type;
         $data['wh_id'] = $detailpro->wh_id;
         $data['product_id'] = $detailpro->product_id;
-       
         $data['quantity'] = $detailpro->quantity;
+        $data['qty_sold'] = $detailpro->qty_sold;
         $data['price'] =$detailpro->price;
         $data['expired_at'] = $detailpro->expired_at;
         
@@ -100,92 +100,19 @@ class WarehouseInDetail extends Model
              $data['prebalance'] = $prebalance;
         else
             $data['prebalance'] = 0;
-        // $data['wo_id']= 0;
-        // $data['doc_type'] = 'din';
-        // $data['wh_id'] =  $detailpro->wh_id;
-        // $data['product_id'] = $detailpro->product_id;
-        // $data['quantity'] =$detailpro->quantity;
-        $data['operation'] = -1;
-        // $data['price'] =$detailpro->price;
-        // $data['in_ids']= $detailpro->id;
-        // \App\Models\WarehouseoutDetail::create($data);
-        \App\Models\InventoryDetail::create($data);
-        $oldinv_detail = \App\Models\InventoryDetail::where('doc_id',$detailpro->doc_id)
-            ->where('doc_type',$detailpro->doc_type)->first();
-        $oldinv_detail->doc_id =   $data['doc_id'];
-        $oldinv_detail->doc_type = $data['doc_type'];
-        $oldinv_detail->save();
-        //cap nhat widetail ve 0 giong nhu xoa
-        // $detailpro->doc_id = 0;
-        $detailpro->is_deleted = 1; 
-        $detailpro->save();
-
-
-    }
-    public static function deleteReturnDetailProVersion($detailpro,$extraprice,$wh_id,$din_id )
-    {
-
-        $product = \App\Models\Product::where('id',$detailpro->product_id)->first();
-        if($product->type=='normal')
-        {
-        //     if($product->stock ==$detailpro->quantity )
-        //     {
-        //         $avg = 0;
-        //     }
-        //     else
-        //     {
-        //         $avg =  $product->stock * $product->price_avg - ($extraprice + $detailpro->price)*$detailpro->quantity;
-        //         $avg = $avg/($product->stock - $detailpro->quantity);
-        //     }
-            $product->stock += $detailpro->quantity;
-             
-            
-            $inventory = \App\Models\Inventory::where('product_id',$detailpro->product_id)
-                ->where('wh_id',$wh_id)->first();
-            
-            $prebalance = $inventory->quantity;
-
-            $inventory->quantity += $detailpro->quantity;
-            $product->save();
-            $inventory->save();
-        }
-        $data['doc_id']= $din_id;
-        $data['doc_type'] =  'din';
-        $data['wh_id'] = $detailpro->wh_id;
+        $data['wo_id']= 0;
+        $data['doc_type'] = 'wo';
+        $data['wh_id'] =  $detailpro->wh_id;
         $data['product_id'] = $detailpro->product_id;
-       
-        $data['quantity'] = $detailpro->quantity;
+        $data['quantity'] =$detailpro->quantity;
         $data['price'] =$detailpro->price;
-        $data['expired_at'] = $detailpro->expired_at;
-        
-        $dout = \App\Models\DIndetail::create($data);
-        // $detailpro->delete();
-        if(isset($prebalance))
-             $data['prebalance'] = $prebalance;
-        else
-            $data['prebalance'] = 0;
-        // $data['wo_id']= 0;
-        // $data['doc_type'] = 'din';
-        // $data['wh_id'] =  $detailpro->wh_id;
-        // $data['product_id'] = $detailpro->product_id;
-        // $data['quantity'] =$detailpro->quantity;
-        $data['operation'] = 1;
-        // $data['price'] =$detailpro->price;
-        // $data['in_ids']= $detailpro->id;
-        // \App\Models\WarehouseoutDetail::create($data);
-        \App\Models\InventoryDetail::create($data);
-        $oldinv_detail = \App\Models\InventoryDetail::where('doc_id',$detailpro->doc_id)
-            ->where('doc_type',$detailpro->doc_type)->first();
-        $oldinv_detail->doc_id =   $data['doc_id'];
-        $oldinv_detail->doc_type = $data['doc_type'];
-        $oldinv_detail->save();
+        $data['in_ids']= $detailpro->id;
+        \App\Models\WarehouseoutDetail::create($data);
         //cap nhat widetail ve 0 giong nhu xoa
-        // $detailpro->doc_id = 0;
-        $detailpro->is_deleted = 1; 
+        $detailpro->doc_id = 0;
         $detailpro->save();
-
-
     }
+   
     public static function returnDetailPro($detailpro,$extraprice,$wh_id,$in_id)
     {
         $product = \App\Models\Product::where('id',$detailpro->product_id)->first();
@@ -332,12 +259,10 @@ class WarehouseInDetail extends Model
             $data['quantity'] =$wi_detail->quantity;
             $data['price'] =$wi_detail->price;
             $data['in_ids']= $wi_detail->id;
-            $data['operation'] = -1;
-            \App\Models\InventoryDetail::create($data);
-            // \App\Models\WarehouseoutDetail::create($data);
+            \App\Models\WarehouseoutDetail::create($data);
             //cap nhat widetail ve 0 giong nhu xoa
             $wi_detail->doc_id = 0;
-            $wi_detail->delete();
+            $wi_detail->save();
         }
     }
 }

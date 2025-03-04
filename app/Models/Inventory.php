@@ -6,12 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Product;
 use App\Models\IDs;
+use Illuminate\Support\Facades\Log;
 class Inventory extends Model
 {
     use HasFactory;
     protected $fillable = ['product_id','wh_id','quantity' ];
     public static function addProduct($pro_id, $wh_id,$qty,$price,$cost_extra){
         $inventory = Inventory::where("product_id",$pro_id)->where('wh_id',$wh_id)->first();
+        // Log::info(' $inventory->quantity:'. $inventory->quantity);
         if($inventory)
         {
             $inventory->quantity += $qty;
@@ -22,19 +24,38 @@ class Inventory extends Model
             $data['product_id'] = $pro_id;
             $data['wh_id'] = $wh_id;
             $data['quantity'] = $qty;
-            Inventory::create($data);
+            $inventory = Inventory::create($data);
         }
         $product = Product::where("id",$pro_id)->first();
         if($product)
         {
-           
             $product->price_in = $price;
+            // Ghi log mức độ thông tin
+           
+            
             $avg = (int) (($product->price_avg * $product->stock + ( $product->price_in + $cost_extra)*$qty)
-                            /($product->stock + $qty));
-            $product->stock += $qty;
+                            /( $inventory->quantity));
+            $product->stock =  $inventory->quantity;
             $product->price_avg = $avg;
             $product->save();
         }
+    }
+    public static function addProduct_no_update_price($pro_id, $wh_id,$qty,$price,$cost_extra){
+        $inventory = Inventory::where("product_id",$pro_id)->where('wh_id',$wh_id)->first();
+        // Log::info(' $inventory->quantity:'. $inventory->quantity);
+        if($inventory)
+        {
+            $inventory->quantity += $qty;
+            $inventory->save();
+        }
+        else
+        {
+            $data['product_id'] = $pro_id;
+            $data['wh_id'] = $wh_id;
+            $data['quantity'] = $qty;
+            $inventory = Inventory::create($data);
+        }
+        
     }
     
     public static function subProduct($pro_id, $wh_id,$qty,$price,$cost_extra)
@@ -53,14 +74,14 @@ class Inventory extends Model
             if($product)
             {
                 $avg = (int) (($product->price_out * $product->sold + ( $price - $cost_extra)*$qty)
-                                /($product->sold + $qty));
-                $product->stock -= $qty;
+                                /($product->sold + $qty ));
+                $product->stock =  $inventory->quantity;
                 $product->sold += $qty;
                 $product->price_out = $avg;
                 $product->hit += 10;
                 $product->save();
             }
-             $query= "select * from warehouse_in_details where product_id = ".$pro_id." and wh_id = ".$wh_id." and qty_sold < quantity and doc_id != 0 order by warehouse_in_details.id asc";
+             $query= "select * from warehouse_in_details where product_id = ".$pro_id." and wh_id = ".$wh_id." and qty_sold < quantity and doc_id != 0 and is_deleted = 0 order by warehouse_in_details.id asc";
             $details = DB::select($query);
           
             $in_ids=array();
@@ -101,6 +122,72 @@ class Inventory extends Model
         
          
     }
+
+    public static function returnInProduct($pro_id, $wh_id,$qty,$price,$cost_extra,$doc_id)
+    {
+        $product = \App\Models\Product::find($pro_id);
+        if($product->type=='normal')
+        {
+            $inventory = Inventory::where("product_id",$pro_id)->where('wh_id',$wh_id)->first();
+            if($inventory)
+            {
+                $inventory->quantity -= $qty;
+                $inventory->save();
+            }
+           
+            $product = Product::where("id",$pro_id)->first();
+            if($product)
+            {
+                $avg = (int) (($product->price_out * $product->sold + ( $price - $cost_extra)*$qty)
+                                /($product->sold + $qty ));
+                $product->stock =  $inventory->quantity;
+                $product->sold += $qty;
+                $product->price_out = $avg;
+                $product->hit += 10;
+                $product->save();
+            }
+            $query= "select * from warehouse_in_details where product_id = ".$pro_id." and wh_id = ".$wh_id." and doc_id = ".$doc_id." and is_deleted = 0 and doc_type='wi'  ";
+            $details = DB::select($query);
+          
+            $in_ids=array();
+            
+            foreach ($details as $dt)
+            {
+                // return 'dt'.$dt->id;
+                $in_id = new IDs();
+                $detail = \App\Models\WarehouseInDetail::find($dt->id);
+                if($detail->quantity >= $detail->qty_sold+ $qty)
+                {
+                    $detail->qty_sold += $qty;
+                    $in_id->id = $detail->id;
+                    $in_id->qty  = $qty;
+                    array_push($in_ids, $in_id);
+                    $qty = 0;
+                }
+                else
+                {
+                   
+                    $in_id->id = $detail->id;
+                    $in_id->qty  = ($detail->quantity - $detail->qty_sold);
+                    
+                    array_push($in_ids, $in_id);
+                    $qty= $qty- ($detail->quantity - $detail->qty_sold);
+                    $detail->qty_sold = $detail->quantity;
+                }
+                $detail->save();
+               
+               
+                if($qty == 0)
+                    break;
+            }
+            return $in_ids;
+        }
+        else
+            return '';
+        
+         
+    }
+
     public static function updateWarehouseLastIn($pro_id, $wh_id,$qty)
     {
         $product = \App\Models\Product::find($pro_id);
@@ -489,33 +576,36 @@ public static function mainTransfer($pro_id, $wh_id,$qty,$price )
             return $in_ids;
         
     }
-    public static function deleteWarehouseToMaintain($detail)
+    public static function deleteWarehouseToMaintain($details)
     {
-        $inventory = \App\Models\Inventory::where('product_id',$detail->product_id)
-        ->where('wh_id',$detail->wh_id)->first();
-        $pinventory = \App\Models\InventoryMaintenance::where('product_id',$detail->product_id)
-        ->first();
-        if( $inventory && $pinventory && $pinventory->quantity >=$detail->quantity)
+        foreach ($details as $detail)
         {
-            $pinventory->quantity -= $detail->quantity;
-            $pinventory->save();
-            $inventory->quantity += $detail->quantity;
-            $inventory->save();
-            $in_ids = json_decode($detail->in_ids);
-            foreach ($in_ids as $in_id)
+            $inventory = \App\Models\Inventory::where('product_id',$detail->product_id)
+            ->where('wh_id',$detail->wh_id)->first();
+            $pinventory = \App\Models\InventoryMaintenance::where('product_id',$detail->product_id)
+            ->first();
+            if( $inventory && $pinventory && $pinventory->quantity >=$detail->quantity)
             {
-                $detail_in = \App\Models\WarehouseInDetail::find($in_id->id);
-                if($detail_in )
+                $pinventory->quantity -= $detail->quantity;
+                $pinventory->save();
+                $inventory->quantity += $detail->quantity;
+                $inventory->save();
+                $in_ids = json_decode($detail->in_ids);
+                foreach ($in_ids as $in_id)
                 {
-                    $detail_in->qty_sold -= $in_id->qty;
-                    $detail_in->save(); 
+                    $detail_in = \App\Models\WarehouseInDetail::find($in_id->id);
+                    if($detail_in )
+                    {
+                        $detail_in->qty_sold -= $in_id->qty;
+                        $detail_in->benefit -= ($detail->price - $detail_in->price)*$in_id->qty; // xoa thi giamr lowi nhuan
+                        $detail_in->save(); 
+                    }
                 }
+                return 1;
             }
-            return 1;
+            else
+                return 0;
         }
-        else
-            return 0;
-        
     }
     public static function addWarehouseToProperty($product_id,$quantity,$wh_id)
     {
@@ -599,33 +689,40 @@ public static function mainTransfer($pro_id, $wh_id,$qty,$price )
     }
 
 
-    public static function deleteWarehouseToProperty($detail)
+    public static function deleteWarehouseToProperty($details)
     {
-        $inventory = \App\Models\Inventory::where('product_id',$detail->product_id)
-        ->where('wh_id',$detail->wh_id)->first();
-        $pinventory = \App\Models\InventoryProperties::where('product_id',$detail->product_id)
-        ->first();
-        if( $inventory && $pinventory && $pinventory->quantity >=$detail->quantity)
+        foreach ($details as $detail)
         {
-            $pinventory->quantity -= $detail->quantity;
-            $pinventory->save();
-            $inventory->quantity += $detail->quantity;
-            $inventory->save();
-            $in_ids = json_decode($detail->in_ids);
-            foreach ($in_ids as $in_id)
+            $inventory = \App\Models\Inventory::where('product_id',$detail->product_id)
+            ->where('wh_id',$detail->wh_id)->first();
+            $pinventory = \App\Models\InventoryProperties::where('product_id',$detail->product_id)
+            ->first();
+            if( $inventory && $pinventory && $pinventory->quantity >=$detail->quantity)
             {
-                $detail_in = \App\Models\WarehouseInDetail::find($in_id->id);
-                if($detail_in )
+                $pinventory->quantity -= $detail->quantity;
+                $pinventory->save();
+                $inventory->quantity += $detail->quantity;
+                $inventory->save();
+                $in_ids = json_decode($detail->in_ids);
+                foreach ($in_ids as $in_id)
                 {
-                    $detail_in->qty_sold -= $in_id->qty;
-                    $detail_in->save(); 
+                    $detail_in = \App\Models\WarehouseInDetail::find($in_id->id);
+                    if($detail_in )
+                    {
+                         
+                        $detail_in->qty_sold -= $in_id->qty;
+                        $detail_in->benefit -= ($detail->price - $detail_in->price)*$in_id->qty; // xoa thi giamr lowi nhuan
+                       
+                        $detail_in->save();
+                        
+                    }
                 }
+
+                return 1;
             }
-            return 1;
+            else
+                return 0;
         }
-        else
-            return 0;
-        
     }
     public static function addWarehouseToDestroy($product_id,$quantity,$wh_id)
     {
@@ -710,32 +807,41 @@ public static function mainTransfer($pro_id, $wh_id,$qty,$price )
     }
 
 
-    public static function deleteWarehouseToDestroy($detail)
+    public static function deleteWarehouseToDestroy($details)
     {
-        $inventory = \App\Models\Inventory::where('product_id',$detail->product_id)
-        ->where('wh_id',$detail->wh_id)->first();
-        $dinventroy = \App\Models\InventoryDestroy::where('product_id',$detail->product_id)
-        ->first();
-        if( $inventory && $dinventroy && $dinventroy->quantity >=$detail->quantity)
+        foreach ($details as $detail)
         {
-            $dinventroy->quantity -= $detail->quantity;
-            $dinventroy->save();
-            $inventory->quantity += $detail->quantity;
-            $inventory->save();
-            $in_ids = json_decode($detail->in_ids);
-            foreach ($in_ids as $in_id)
+            $inventory = \App\Models\Inventory::where('product_id',$detail->product_id)
+            ->where('wh_id',$detail->wh_id)->first();
+            $dinventroy = \App\Models\InventoryDestroy::where('product_id',$detail->product_id)
+            ->first();
+            if( $inventory && $dinventroy && $dinventroy->quantity >=$detail->quantity)
             {
-                $detail_in = \App\Models\WarehouseInDetail::find($in_id->id);
-                if($detail_in )
+                $dinventroy->quantity -= $detail->quantity;
+                $dinventroy->save();
+                $inventory->quantity += $detail->quantity;
+                $inventory->save();
+                $in_ids = json_decode($detail->in_ids);
+                foreach ($in_ids as $in_id)
                 {
-                    $detail_in->qty_sold -= $in_id->qty;
-                    $detail_in->save(); 
+                    $detail_in = \App\Models\WarehouseInDetail::find($in_id->id);
+                    if($detail_in )
+                    {
+                        $detail_in->qty_sold -= $in_id->qty;
+                        // \Log::info('$detail_in->benefit :'.$detail_in->benefit );
+                        // \Log::info("  detail->price :".$detail->price );
+                        // \Log::info(" in_id->qty :".$in_id->qty );
+                        $detail_in->benefit -= ($detail->price - $detail_in->price)*$in_id->qty; // xoa thi giamr lowi nhuan
+                        // \Log::info('$detail_in->benefit :'.$detail_in->benefit );
+                        $detail_in->save();
+                    }
                 }
+                return 1;
             }
-            return 1;
+            else
+                return 0;
         }
-        else
-            return 0;
+       
         
     }
 }

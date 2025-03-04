@@ -78,6 +78,7 @@ class SupTransaction extends Model
         }
         else
         {
+            //cap nhat cac don xuat
             $warehouseouts = \App\Models\Warehouseout::where('customer_id',$supplier_id)->where('status','active')
             ->where('is_paid',false)->orderBy('id','ASC')->get();
             $paid_amount = $amount;

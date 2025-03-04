@@ -21,6 +21,17 @@ class WarehouseoutDetailSeries extends Model
         $wo_seri = \App\Models\WarehouseoutDetailSeries::create($data_seri);
         return $wo_seri;
     }
+    public static function r_create($wo_id, $seri,$product_id,$doc_type,$wh_id)
+    {
+        
+        $data_seri['wo_id'] =$wo_id;
+        $data_seri['seri'] = $seri;
+        $data_seri['doc_type'] = 'wor';
+        $data_seri['product_id'] = $product_id;
+        $data_seri['in_id'] = 0;
+        $wo_seri = \App\Models\WarehouseoutDetailSeries::create($data_seri);
+        return $wo_seri;
+    }
     public static function create_from_in_seri($wi_seri,$doc_id,$doc_type)
     {
         $data_seri['wo_id'] = $doc_id;

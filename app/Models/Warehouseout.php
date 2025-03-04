@@ -18,6 +18,10 @@ class Warehouseout extends Model
         \App\Models\Systrans::add_warehouseout($mw->id,$mw->final_amount,1);
         return $mw;
     }
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'customer_id');
+    }
     public static function log_change($warehouseout)
     {
         $data['outid'] = $warehouseout->id;

@@ -9,5 +9,9 @@ class DIn extends Model
 {
     use HasFactory;
     protected $fillable = ['inid','code','version','wh_id', 'supplier_id', 'vendor_id','final_amount','discount_amount','paid_amount','is_paid','suptrans_id','paidtrans_id','shiptrans_id','cost_extra','status'];
-  
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'supplier_id');
+    }
+
 }

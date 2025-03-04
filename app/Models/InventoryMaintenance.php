@@ -359,6 +359,7 @@ class InventoryMaintenance extends Model
                 if($inventory)
                 {
                     $inventory->quantity -= $qty;
+                    
                     $inventory->save();
                 }
             }

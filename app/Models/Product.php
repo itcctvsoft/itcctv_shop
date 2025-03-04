@@ -21,7 +21,14 @@ class Product extends Model
            return 1;
         }
     }
-    
+    public function update_kiot()
+    {
+        if(env('KIOT_SYNC') == 1)
+        {
+            $kiotController = new \App\Http\Controllers\KiotController();
+            $kiotController->kiotUpdateProduct($this);
+        }
+    }
     public static function c_create($data)
     {
         $slug = Str::slug($data['title']);
@@ -36,7 +43,11 @@ class Product extends Model
         $pro->code = "PRO" . sprintf('%09d',$pro->id);
         $pro->save();
        
-        
+        if(env('KIOT_SYNC') == 1)
+        {
+            $kiotController = new \App\Http\Controllers\KiotController();
+            $kiotController->kiotAddProduct($pro);
+        }
        
         return $pro;
     }
