@@ -15,6 +15,8 @@ use App\Models\BankTransaction;
 use App\Models\FreeTransaction;
 use App\Models\UGroup;
 use App\Models\User;
+use App\Models\InventoryDetail;
+use Illuminate\Support\Facades\Log;
 class WarehouseoutController extends Controller
 {
     /**
@@ -101,7 +103,7 @@ class WarehouseoutController extends Controller
         // dd($query);
         $data['warehouseouts'] = DB::table('warehouseouts')
         ->select ('warehouseouts.*'   )
-        ->join(DB::raw($query),'warehouseouts.id','=','b.id')
+        ->join(\DB::raw($query),'warehouseouts.id','=','b.id')
         ->orderBy('id','desc')
         ->paginate($this->pagesize)->withQueryString();
 
@@ -260,7 +262,8 @@ class WarehouseoutController extends Controller
             $pro_inventory = Inventory::where('product_id',$detail['id'])->where('wh_id', $data['wh_id'])->first();
             if(!$pro_inventory || $pro_inventory->quantity < $detail['quantity'] )
             {
-                return 1;
+                // return 1;
+                return response()->json(['msg'=>'Số lượng trong kho không đủ','status'=>false]);
             }
               ////update series for each product
               $series =  explode(",",  $detail['seri']);
@@ -276,11 +279,13 @@ class WarehouseoutController extends Controller
               $counts_n = $counts_n[0]->tong;
               if($count_n > $counts_n )
               {
-                    return 2;
+                    // return 2;
+                    return response()->json(['msg'=>'Số lượng seri trong đơn lớn hơn trong kho!','status'=>false]);
               }
               if($count_n > $detail['quantity'] )
               {
-                    return 3;
+                    // return 3;
+                    return response()->json(['msg'=>'số seri lớn hơn số trong kho','status'=>false]);
               }
               if($count_n > 0)
               {
@@ -293,7 +298,8 @@ class WarehouseoutController extends Controller
                         $rows = \DB::select($query);
                         if(count($rows) == 0)
                         {
-                            return 5;
+                            // return 5;
+                            return response()->json(['msg'=>'Số sp không seri lớn hơn số sp không seri trong kho','status'=>false]);
                         }
                             
                     } 
@@ -305,136 +311,150 @@ class WarehouseoutController extends Controller
               $sold_noseri =$detail['quantity'] - $count_n;
               if($sold_noseri > $n_noseri) //neu so hang ban ko seri > so hàng tonkho thi false
               {
-                    return 4;
+                    // return 4;
+                    return response()->json(['msg'=>'Seri không có trong kho','status'=>false]);
               }
 
         }
         ///save product detail ////////////
         ////average price///////////////////
-        
-        $count_item = 0;
-        foreach ($details as $detail)
-        {
-            $count_item += $detail['quantity'];
-        }
-        $cost_extra = ($data['discount_amount'])/ $count_item ;
-        $data['cost_extra'] = $cost_extra ;
-        $data['bankpayment'] = $totalbankpaid;
-        $data['debtbefore'] = $deb_before;
-        $data['debtafter'] =  $deb_before - $data['final_amount'];
+        \DB::beginTransaction();
+        try {
+                $count_item = 0;
+                foreach ($details as $detail)
+                {
+                    $count_item += $detail['quantity'];
+                }
+                $cost_extra = ($data['discount_amount'])/ $count_item ;
+                $data['cost_extra'] = $cost_extra ;
+                $data['bankpayment'] = $totalbankpaid;
+                $data['debtbefore'] = $deb_before;
+                $data['debtafter'] =  $deb_before - $data['final_amount'];
 
-        $wo = Warehouseout::c_create($data);
-       
-        // return $wi;
-        // dd($wo);
-        ////////////////////////////////////
-        foreach ($details as $detail)
-        {
-            $product_detail['wo_id'] = $wo->id;
-            $product_detail['wh_id'] = $data['wh_id'];
-            $product_detail['product_id']= $detail['id'];
-            $product_detail['quantity'] = $detail['quantity'];
-            $product_detail['price'] = $detail['price'];
-            //tim pre balance
-            $inv = \App\Models\Inventory::where('product_id',$detail['id'])
-                ->where('wh_id',$data['wh_id'])
-                ->first();
-            if( $inv)
-                $product_detail['prebalance'] =$inv->quantity;
-            else
-                $product_detail['prebalance'] = 0;
-             //save expired days
-            $product = Product::find($detail['id']);
-            $start_date = date('Y-m-d H:i:s');
-            if($product->expired)
-            {
-                $strday = '+' . $product->expired*30 .' days';
-                $end_date = date("Y-m-d 23:59:59", strtotime( $strday, strtotime($start_date)));
-                $product_detail['expired_at'] = $end_date;
-            }
-            $in_ids=array();
-
-            // return ($in_ids);
-            //decrease stock
-            ////update series for each product
-            $series =  explode(",",  $detail['seri']);
-            $count_n =0;
-            if($detail['seri']!= '')
-            {
-                $count_n =count($series );
-            }
-            $counts_n = \DB::select ("select count(id) as tong from warehousein_detail_series where product_id = ".$detail['id'].' and is_sold = 0'); 
-            $counts_n = $counts_n[0]->tong;
-            //so hang khong co seri xuat kho
-            $sold_noseri =$detail['quantity'] - $count_n;
-            Inventory::subProductInv($product_detail['product_id'], $data['wh_id'], $detail['quantity'], $product_detail['price'], $cost_extra);
-            $in_ids = Inventory::updateWarehouseLastIn($product_detail['product_id'], $data['wh_id'],$sold_noseri);
+                $wo = Warehouseout::c_create($data);
             
-            foreach ($series as $seri)
+                // return $wi;
+                // dd($wo);
+                ////////////////////////////////////
+                foreach ($details as $detail)
+                {
+                    $product_detail['wo_id'] = $wo->id;
+                    $product_detail['wh_id'] = $data['wh_id'];
+                    $product_detail['product_id']= $detail['id'];
+                    $product_detail['quantity'] = $detail['quantity'];
+                    $product_detail['price'] = $detail['price'];
+                    $product_detail['operation'] = -1;
+                    $product_detail['doc_id'] = $wo->id;
+                    //tim pre balance
+                    $inv = \App\Models\Inventory::where('product_id',$detail['id'])
+                        ->where('wh_id',$data['wh_id'])
+                        ->first();
+                    if( $inv)
+                        $product_detail['prebalance'] =$inv->quantity;
+                    else
+                        $product_detail['prebalance'] = 0;
+                    //save expired days
+                    $product = Product::find($detail['id']);
+                    $start_date = date('Y-m-d H:i:s');
+                    if($product->expired)
+                    {
+                        $strday = '+' . $product->expired*30 .' days';
+                        $end_date = date("Y-m-d 23:59:59", strtotime( $strday, strtotime($start_date)));
+                        $product_detail['expired_at'] = $end_date;
+                    }
+                    $in_ids=array();
+
+                    // return ($in_ids);
+                    //decrease stock
+                    ////update series for each product
+                    $series =  explode(",",  $detail['seri']);
+                    $count_n =0;
+                    if($detail['seri']!= '')
+                    {
+                        $count_n =count($series );
+                    }
+                    $counts_n = \DB::select ("select count(id) as tong from warehousein_detail_series where product_id = ".$detail['id'].' and is_sold = 0'); 
+                    $counts_n = $counts_n[0]->tong;
+                    //so hang khong co seri xuat kho
+                    $sold_noseri =$detail['quantity'] - $count_n;
+                    Inventory::subProductInv($product_detail['product_id'], $data['wh_id'], $detail['quantity'], $product_detail['price'], $cost_extra);
+                    $in_ids = Inventory::updateWarehouseLastIn($product_detail['product_id'], $data['wh_id'],$sold_noseri);
+                    
+                    foreach ($series as $seri)
+                    {
+                        $seri = trim ($seri);
+                        if ($seri == '')
+                            continue;
+                        $wi_seri = \App\Models\WarehouseinDetailSeries::where('seri',$seri)
+                            ->where('product_id',$detail['id'])->where('is_sold',0)->first();
+                        $wi_seri->is_sold = 1;
+                        $wi_seri->save();
+                        $data_seri['wo_id'] = $wo->id;
+                        $data_seri['seri'] = $seri;
+                        $data_seri['product_id'] = $detail['id'];
+                        $data_seri['in_id'] = $wi_seri->id;
+                        $data_seri['doc_type'] = 'wo';
+                        \App\Models\WarehouseoutDetailSeries::create($data_seri);
+                        $detail_in = \App\Models\WarehouseInDetail::where('doc_id',$wi_seri->wi_id)
+                        ->where('is_deleted',0)
+                            ->where('product_id',$wi_seri->product_id)->first();
+                        $in_id = Inventory::updateWarehouseInDetails($product_detail['product_id'], $data['wh_id'],$detail_in);
+                        array_push($in_ids, $in_id);
+                    }
+                    $product_detail['in_ids'] = json_encode($in_ids);
+                    $product_detail['doc_type']='wo'; //loai xuat la phieu xuat ban hang
+                    WarehouseoutDetail::c_create($product_detail,$cost_extra);
+                    InventoryDetail::create($product_detail);
+
+                
+                }
+            
+                ///create SupTransaction
+                $sps = SupTransaction::createSubTrans($wo->id,'wo',-1,$data['final_amount'], $data['customer_id']);
+             
+                $wo->suptrans_id = $sps->id;
+                ///create paid transaction
+                if( $totalbankpaid > 0)
+                {
+                    $bank_doc = BankTransaction::insertBankTrans($user->id,$data['bank_id'],1,$wo->id,'wo',$totalbankpaid );
+                    SupTransaction::createSubTrans($bank_doc->id,'fi',1, $totalbankpaid , $data['customer_id']); 
+                    $in_ids=array();
+                    $in_id = new \App\Models\Number();
+                    $in_id->id = $bank_doc->id;
+                    array_push($in_ids,$in_id);
+                    $wo->paidtrans_ids = json_encode($in_ids);
+        
+                }
+            ///create ship invocie ///////////
+            if($data['shipcost'] > 0)
             {
-                $seri = trim ($seri);
-                if ($seri == '')
-                    continue;
-                $wi_seri = \App\Models\WarehouseinDetailSeries::where('seri',$seri)
-                    ->where('product_id',$detail['id'])->where('is_sold',0)->first();
-                $wi_seri->is_sold = 1;
-                $wi_seri->save();
-                $data_seri['wo_id'] = $wo->id;
-                $data_seri['seri'] = $seri;
-                $data_seri['product_id'] = $detail['id'];
-                $data_seri['in_id'] = $wi_seri->id;
-                $data_seri['doc_type'] = 'wo';
-                \App\Models\WarehouseoutDetailSeries::create($data_seri);
-                $detail_in = \App\Models\WarehouseInDetail::where('doc_id',$wi_seri->wi_id)
-                    ->where('product_id',$wi_seri->product_id)->first();
-                $in_id = Inventory::updateWarehouseInDetails($product_detail['product_id'], $data['wh_id'],$detail_in);
-                array_push($in_ids, $in_id);
+                    $fts= FreeTransaction::addFreeTrans($data['shipcost'],$data['bank_id'],-1,'ship',$user->id);
+                    $wo->shiptrans_id = $fts->id;
+                    BankTransaction::insertBankTrans($user->id,$data['bank_id'],-1,$fts->id,'fi',$data['shipcost']);
             }
-            $product_detail['in_ids'] = json_encode($in_ids);
-            $product_detail['doc_type']='wo'; //loai xuat la phieu xuat ban hang
-            WarehouseoutDetail::c_create($product_detail);
-            \Log::info('insert product detail.');
-            \Log::info( $product_detail['product_id']);
-            \Log::info( $product_detail['quantity'] );
-            \Log::info( $product_detail['price'] );
+            //luu uiid cho phieu xuat
+            $detail = \App\Models\SettingDetail::find(1);
+            if($detail->itcctv_email != '')
+            {
+                    $md5string = md5($detail->itcctv_email . '_'.$wo->id);
+                    $wo->uiid   = $formattedString = implode('-', str_split($md5string, 4));;
+            }
+            
+            $wo->save();
+            
+            $content = 'thêm đơn bán hàng' ;
+            \App\Models\Log::insertLogNew($content,$wo->id,'wo',$user->id);
+            // return $wo;
+            $html = $this->print_invoice($wo->id);
+            DB::commit();
+            return response()->json(['html'=> $html,'msg'=>'Thêm đơn hàng thành công!','status'=>true]);
         }
-      
-        ///create SupTransaction
-        $sps = SupTransaction::createSubTrans($wo->id,'wo',-1,$data['final_amount'], $data['customer_id']);
-        \Log::info( 'SupTransaction' );
-        $wo->suptrans_id = $sps->id;
-        ///create paid transaction
-        if( $totalbankpaid > 0)
-        {
-            $bank_doc = BankTransaction::insertBankTrans($user->id,$data['bank_id'],1,$wo->id,'wo',$totalbankpaid );
-            SupTransaction::createSubTrans($bank_doc->id,'fi',1, $totalbankpaid , $data['customer_id']); 
-            $in_ids=array();
-            $in_id = new \App\Models\Number();
-            $in_id->id = $bank_doc->id;
-            array_push($in_ids,$in_id);
-            $wo->paidtrans_ids = json_encode($in_ids);
- 
+        catch (\Exception $e) {
+            \DB::rollback(); // Quay lại trạng thái trước đó nếu có lỗi
+            \Log::error('Lỗi khi lưu đơn xuất kho: ' . $e->getMessage());
+            return response()->json(['msg'=>$e->getMessage(),'status'=>false]);
+            // return response()->json(['status'=>false,'msg' => 'Có lỗi xảy ra khi lưu đơn xuất kho.'], 500);
         }
-       ///create ship invocie ///////////
-       if($data['shipcost'] > 0)
-       {
-            $fts= FreeTransaction::addFreeTrans($data['shipcost'],$data['bank_id'],-1,'ship',$user->id);
-            $wo->shiptrans_id = $fts->id;
-            BankTransaction::insertBankTrans($user->id,$data['bank_id'],-1,$fts->id,'fi',$data['shipcost']);
-       }
-      //luu uiid cho phieu xuat
-       $detail = \App\Models\SettingDetail::find(1);
-       if($detail->itcctv_email != '')
-       {
-            $md5string = md5($detail->itcctv_email . '_'.$wo->id);
-            $wo->uiid   = $formattedString = implode('-', str_split($md5string, 4));;
-       }
-      
-       $wo->save();
-       
-       $content = 'thêm đơn bán hàng' ;
-       \App\Models\Log::insertLogNew($content,$wo->id,'wo',$user->id);
-       return $wo;
     }
     
     public function store(Request $request)
@@ -446,46 +466,46 @@ class WarehouseoutController extends Controller
             'importDoc.shipcost'=>'numeric|nullable',
             'importDoc.paid_amount'=>'numeric|required',
         ]);
-        $kq = $this->save_warehouseout($request);
-        // dd($kq);
-        if(is_int($kq) && $kq == 1)
-        {
-            return response()->json(['msg'=>'Số lượng trong kho không đủ','status'=>false]);
-        }
-        else
-        {
-            if(is_int($kq) &&  $kq == 2)
-            {
-                return response()->json(['msg'=>'Số lượng seri trong đơn lớn hơn trong kho!','status'=>false]);
-            }
-            else
-            {
-                if(is_int($kq) &&  $kq == 3)
-                {
-                    return response()->json(['msg'=>'số seri lớn hơn số trong kho','status'=>false]);
-                }
-                else
-                {
-                    if(is_int($kq) &&  $kq == 4)
-                    {
-                        return response()->json(['msg'=>'Seri không có trong kho','status'=>false]);
-                    }
-                    else
-                    {
-                        if(is_int($kq) && $kq == 5)
-                        {
-                            return response()->json(['msg'=>'Số sp không seri lớn hơn số sp không seri trong kho','status'=>false]);
-                        }
-                        else
-                        {
-                            // dd($kq);
-                            $html = $this->print_invoice($kq->id);
-                            return response()->json(['html'=> $html,'msg'=>'Thêm đơn hàng thành công!','status'=>true]);
-                        }
-                    }
-                }
-            }
-        }
+        return $this->save_warehouseout($request);
+        // // dd($kq);
+        // if(is_int($kq) && $kq == 1)
+        // {
+        //     return response()->json(['msg'=>'Số lượng trong kho không đủ','status'=>false]);
+        // }
+        // else
+        // {
+        //     if(is_int($kq) &&  $kq == 2)
+        //     {
+        //         return response()->json(['msg'=>'Số lượng seri trong đơn lớn hơn trong kho!','status'=>false]);
+        //     }
+        //     else
+        //     {
+        //         if(is_int($kq) &&  $kq == 3)
+        //         {
+        //             return response()->json(['msg'=>'số seri lớn hơn số trong kho','status'=>false]);
+        //         }
+        //         else
+        //         {
+        //             if(is_int($kq) &&  $kq == 4)
+        //             {
+        //                 return response()->json(['msg'=>'Seri không có trong kho','status'=>false]);
+        //             }
+        //             else
+        //             {
+        //                 if(is_int($kq) && $kq == 5)
+        //                 {
+        //                     return response()->json(['msg'=>'Số sp không seri lớn hơn số sp không seri trong kho','status'=>false]);
+        //                 }
+        //                 else
+        //                 {
+        //                     // dd($kq);
+        //                     $html = $this->print_invoice($kq->id);
+        //                     return response()->json(['html'=> $html,'msg'=>'Thêm đơn hàng thành công!','status'=>true]);
+        //                 }
+        //             }
+        //         }
+        //     }
+        // }
        
         
        
@@ -524,11 +544,19 @@ class WarehouseoutController extends Controller
                 $paid_amount = $warehouseout->paid_amount;
                 $buyer =  \App\Models\User::find($warehouseout->customer_id);
                  $amount_before_paid = $sup_trans->total  ;
-                $amount_before_trans =  $sup_trans->total - $sup_trans->operation* $sup_trans->amount;
-                $amount_after_trans = $sup_trans->total   +  $warehouseout->paid_amount;
-                $amount_after_trans = $buyer->budget;
+                // $amount_before_trans =  $sup_trans->total - $sup_trans->operation* $sup_trans->amount;
+                // $amount_after_trans = $sup_trans->total   +  $warehouseout->paid_amount;
+                // $amount_after_trans = $buyer->budget;
 
-                $wo_details = WarehouseoutDetail::where('wo_id',$id)->where('doc_type','wo')->get();
+                $amount_before_trans = $warehouseout->debtbefore;
+                $amount_after_trans = $warehouseout->debtafter;
+                $paid_amount = $warehouseout->bankpayment;
+                // if($amount_after_trans < 0)
+                //     $amount_after_trans = $amount_after_trans * (-1);
+                // if($amount_before_trans < 0)
+                //     $amount_before_trans = $amount_before_trans * (-1);
+                // dd($amount_before_trans, $amount_after_trans );
+                $wo_details = WarehouseoutDetail::where('wo_id',$id)->where('is_deleted',0)->where('doc_type','wo')->get();
                 foreach($wo_details as $wi_detail)
                 {
                     $series = "";
@@ -543,14 +571,32 @@ class WarehouseoutController extends Controller
                     }
                     $wi_detail->series = $series;
                 }
-                return view('backend.warehouseouts.show',compact('breadcrumb','warehouseout','active_menu','wo_details','amount_after_trans','amount_before_trans','amount_before_paid'));
+                $in_ids = json_decode($warehouseout->returned_ids);
+                $return_wos = null;
+                $sum_return = 0;
+                $in_ids = json_decode($warehouseout->returned_ids);
+                                 
+                if($warehouseout->status =='active' && $in_ids && count($in_ids) > 0)
+                {
+                    // dd($in_ids);
+                    $ids = collect($in_ids)->pluck('id')->toArray();
+                    $return_wos =  \App\Models\Warehouseout::whereIn('id', $ids)->where('status','returned')->get();
+                    foreach($return_wos as $return_wo)
+                    {
+                        $sum_return += $return_wo->final_amount;
+                    }
+                   
+                }
+
+              
+                return view('backend.warehouseouts.show',compact('breadcrumb','warehouseout','active_menu','wo_details','amount_after_trans','amount_before_trans','amount_before_paid','paid_amount','sum_return'));
             }
             else
             {
                 if($warehouseout->status == 'returned' )
                 {
                     // $sup_trans = \App\Models\SupTransaction::where('doc_type','wr')->where('doc_id',$warehouseout->id)->first();
-                    $sup_trans = \App\Models\SupTransaction::where('doc_type','wr')->where('doc_id',$warehouseout->id)->where('is_delete',0)->first();
+                    $sup_trans = \App\Models\SupTransaction::where('doc_type','wor')->where('doc_id',$warehouseout->id)->where('is_delete',0)->first();
                     
                     $paid_amount = $warehouseout->paid_amount;
                     $buyer =  \App\Models\User::find($warehouseout->customer_id);
@@ -559,12 +605,12 @@ class WarehouseoutController extends Controller
                     $amount_after_trans = $sup_trans->total   +  $warehouseout->paid_amount;
                     $amount_after_trans = $buyer->budget;
 
-                    $wo_details = \App\Models\WarehouseInDetail::where('doc_id',$id)->where('doc_type','wr')->get();
+                    $wo_details = \App\Models\WarehouseoutDetail::where('wo_id',$id)->where('doc_type','wor')->where('is_deleted',0)->get();
                     foreach($wo_details as $wi_detail)
                     {
                         $series = "";
                         $i = 0;
-                        $wi_seris = \DB::select("select seri from warehousein_detail_series where wi_id =".$wi_detail->doc_id ." and doc_type='wr' and product_id = ".$wi_detail->product_id );
+                        $wi_seris = \DB::select("select seri from warehouseout_detail_series where wo_id =".$wi_detail->wo_id ." and doc_type='wor' and product_id = ".$wi_detail->product_id );
                         foreach($wi_seris as $wi_seri)
                         {
                             if ($i > 0)
@@ -701,7 +747,7 @@ class WarehouseoutController extends Controller
             $breadcrumb = '
             <li class="breadcrumb-item"><a href="#">/</a></li>
             <li class="breadcrumb-item  " aria-current="page"><a href="'.route('warehouseout.index').'">Danh sách bán hàng</a></li>
-            <li class="breadcrumb-item active" aria-current="page"> điều chỉnh phiếu bán hàng </li>';
+            <li class="breadcrumb-item active" aria-current="page"> điều chỉnh phiếu trả hàng </li>';
             $warehouses = Warehouse::where('status','active')->orderBy('id','ASC')->get();
             $bankaccounts = Bankaccount::where('status','active')->orderBy('id','ASC')->get();
             $deliveries= User::where('role','delivery')->where('status','active')->orderBy('id','ASC')->get();
@@ -818,7 +864,7 @@ class WarehouseoutController extends Controller
                
         $products = DB::table('warehouseout_details')
         ->select ('warehouseout_details.price','warehouseout_details.product_id','warehouseout_details.quantity', 'p.title','p.photo','p.id','p.type','np.quantity as stock_qty')
-        ->where('wo_id',$request->wo_id)->where('doc_type','wo')
+        ->where('wo_id',$request->wo_id)->where('doc_type','wo')->where('is_deleted',0)
         ->leftJoin(\DB::raw($query),'warehouseout_details.product_id','=','p.id')
         ->leftJoin(\DB::raw($query1),'warehouseout_details.product_id','=','np.product_id')
         ->orderBy('id','ASC')->get();
@@ -864,7 +910,7 @@ class WarehouseoutController extends Controller
                
         $products = DB::table('warehouseout_details')
         ->select ('warehouseout_details.price','warehouseout_details.product_id','warehouseout_details.qty_returned','warehouseout_details.quantity', 'p.title','p.photo','p.price_in','p.price_out','p.id','p.type','np.quantity as stock_qty')
-        ->where('wo_id',$request->wo_id)->where('doc_type','wo')
+        ->where('wo_id',$request->wo_id)->where('doc_type','wo')->where('is_deleted',0)
         ->leftJoin(\DB::raw($query),'warehouseout_details.product_id','=','p.id')
         ->leftJoin(\DB::raw($query1),'warehouseout_details.product_id','=','np.product_id')
         ->orderBy('id','ASC')->get();
@@ -918,7 +964,7 @@ class WarehouseoutController extends Controller
                
         $products = DB::table('warehouseout_details')
         ->select ('warehouseout_details.price','warehouseout_details.product_id','warehouseout_details.qty_returned','warehouseout_details.quantity', 'p.title','p.photo','p.id','p.type','np.quantity as stock_qty')
-        ->where('wo_id',$request->woold_id)->where('doc_type','wo')
+        ->where('wo_id',$request->woold_id)->where('doc_type','wo')->where('is_deleted',0)
         ->leftJoin(\DB::raw($query),'warehouseout_details.product_id','=','p.id')
         ->leftJoin(\DB::raw($query1),'warehouseout_details.product_id','=','np.product_id')
         ->orderBy('id','ASC')->get();
@@ -942,25 +988,30 @@ class WarehouseoutController extends Controller
                 $series .= $productseri->seri;
                 $i ++;
             }
-            $product->seri=$series;
+            $product->series=$series;
 
-            $iproductseris = \App\Models\WarehouseinDetailSeries::where('product_id',$product->id)
-              ->where('is_sold',0)->get();
-            
-            // $series = "";
-            foreach ($iproductseris as $productseri)
+          
+
+        }
+        if (isset ( $request->wo_id))
+        {
+            $product->groupprice=$prices;
+            $oproductseris = \App\Models\WarehouseoutDetailSeries::where('product_id',$product->id)
+             ->where('wo_id',$request->wo_id)->where('doc_type','wor')->get();
+            $i = 0;
+            $series = "";
+            foreach ($oproductseris as $productseri)
             {
                 if ($i > 0)
                     $series .= ',';
                 $series .= $productseri->seri;
                 $i ++;
             }
-            $product->series=$series;
+            $product->seri=$series;
 
-        }
-        if (isset ( $request->wo_id))
-        {
-            $return_details = \App\Models\WarehouseInDetail::where('doc_id',$request->wo_id)->where('doc_type','wr')->get();
+            $return_details = \App\Models\WarehouseoutDetail::where('wo_id',$request->wo_id)
+            ->where('is_deleted',0)
+            ->where('doc_type','wor')->get();
             foreach($return_details as $detail )
             {
                 foreach($products as $product)
@@ -1005,7 +1056,8 @@ class WarehouseoutController extends Controller
         else
             $data['is_paid'] = 0;
        
-       
+        \DB::beginTransaction();
+      
         //check detail product are exported
         $user = auth()->user();
         $data['vendor_id'] = $user->id;
@@ -1021,6 +1073,7 @@ class WarehouseoutController extends Controller
            
               //lay chi tiet xuat kho cu de kiem tra cung ton kho va so xuat kho moi
             $wo_detail = \App\Models\WarehouseoutDetail::where('wo_id',$oldwarehouseout->id)->where('doc_type','wo')
+            ->where('is_deleted',0)
               ->where('product_id',$detail['id'])->first();
            
             $pro_inventory = Inventory::where('product_id',$detail['id'])->where('wh_id', $data['wh_id'])->first();
@@ -1084,8 +1137,9 @@ class WarehouseoutController extends Controller
               }
 
         }
-       
-        $detailpros = WarehouseoutDetail::where('wo_id',$data['id'])->where('doc_type','wo')->get();
+      
+        $detailpros = WarehouseoutDetail::where('wo_id',$oldwarehouseout->id)->where('doc_type','wo')
+        ->where('is_deleted',0)->get();
         $bank_docs = BankTransaction::where('doc_id',$oldwarehouseout->id)
             ->where('doc_type','wo')->get();
         
@@ -1103,10 +1157,10 @@ class WarehouseoutController extends Controller
         $dout = \App\Models\Warehouseout::log_change($oldwarehouseout);
         foreach($detailpros as $dtpro)
         {
-            WarehouseoutDetail::deleteDetailProVersion($dtpro,$oldwarehouseout->cost_extra,$oldwarehouseout->wh_id,$dout->id);
+            WarehouseoutDetail::deleteDetailProVersion($dtpro,$oldwarehouseout->cost_extra,$oldwarehouseout->wh_id,$dout->id); //them dout detail, them inventory detail, cn isdetelete = 1
         }
         ///delete sup trans 1 for importing
-        SupTransaction::removeSubTrans($oldwarehouseout->suptrans_id,'wor',$dout->id);
+        SupTransaction::removeSubTrans($oldwarehouseout->suptrans_id,'dout',$dout->id);
         ///
          ///delete paid transaction
          $total_return = 0;
@@ -1129,7 +1183,6 @@ class WarehouseoutController extends Controller
         }
        
         ///delete ship invoice
-         
        if($oldwarehouseout->shiptrans_id)
        {
             $fts = FreeTransaction::find($oldwarehouseout->shiptrans_id);
@@ -1195,7 +1248,6 @@ class WarehouseoutController extends Controller
         // return $wi;
         ////////////////////////////////////
 
-       
         foreach ($details as $detail)
         {
             $product_detail['wo_id'] = $oldwarehouseout->id;
@@ -1238,7 +1290,6 @@ class WarehouseoutController extends Controller
            Inventory::subProductInv($product_detail['product_id'], $data['wh_id'], $detail['quantity'], $product_detail['price'], $cost_extra);
            //tim detail in voi san pham ko seri
            $in_ids = Inventory::updateWarehouseLastIn($product_detail['product_id'], $data['wh_id'],$sold_noseri);
-           
            foreach ($series as $seri)
            {
                $seri = trim ($seri);
@@ -1256,13 +1307,18 @@ class WarehouseoutController extends Controller
                \App\Models\WarehouseoutDetailSeries::create($data_seri);
                 //tim detailin cho seri
                 $detail_in = \App\Models\WarehouseInDetail::where('doc_id',$wi_seri->wi_id)
+                ->where('is_deleted',0)
                    ->where('product_id',$wi_seri->product_id)->first();
                 $in_id = Inventory::updateWarehouseInDetails($product_detail['product_id'], $data['wh_id'],$detail_in);
                 array_push($in_ids, $in_id);
            }
            $product_detail['in_ids'] = json_encode($in_ids);
            $product_detail['doc_type']='wo'; //loai xuat la phieu xuat ban hang
-           WarehouseoutDetail::c_create($product_detail);
+           $product_detail['doc_id'] = $oldwarehouseout->id;
+           $product_detail['operation'] = -1;
+           WarehouseoutDetail::c_create($product_detail,$cost_extra);
+           InventoryDetail::create($product_detail);
+
         }
         
              
@@ -1297,6 +1353,7 @@ class WarehouseoutController extends Controller
         ///create log /////////////
         $content = 'cập nhật đơn bán hàng' ;
         \App\Models\Log::insertLogNew($content,$oldwarehouseout->id,'wo',$user->id);
+        \DB::commit();
         return response()->json(['msg'=>'Cập nhật đơn hàng thành công!','status'=>true]);
     }
 
@@ -1316,25 +1373,20 @@ class WarehouseoutController extends Controller
             {
                 return redirect()->route('unauthorized');
             }
+
+            \DB::beginTransaction();
+      
             $oldwarehouseout = WarehouseOut::find($id);
            // return $oldwarehouseout;
             if(  $oldwarehouseout==null || $oldwarehouseout->status == 'return')
                 return back()->with('error','Không tìm thấy dữ liệu');
             $user = auth()->user();
            //check detail product are exported
-            $detailpros = WarehouseoutDetail::where('wo_id',$oldwarehouseout->id)->where('doc_type','wo')->get();
+            $detailpros = WarehouseoutDetail::where('wo_id',$oldwarehouseout->id)->where('doc_type','wo')
+            ->where('is_deleted',0)->get();
             $bank_docs = BankTransaction::where('doc_id',$oldwarehouseout->id)
                ->where('doc_type','wo')->get();
-         /*   $sum_paid = 0;
-            foreach ($bank_docs as $bank_doc)
-            {
-                $sum_paid += $bank_doc->total;
-            }
-            if($sum_paid != $oldwarehouseout->paid_amount )
-            {
-                return back()->with('error','Đã có nhiều giao dịch trả tiền cho phiếu nhập hàng. Không thể xóa!');
-            }
-            */
+       
            //delete all old product detail
             $dout = \App\Models\Warehouseout::log_change($oldwarehouseout);
             foreach($detailpros as $dtpro)
@@ -1343,7 +1395,7 @@ class WarehouseoutController extends Controller
             }
             
            ///delete sup trans 1 for importing
-           SupTransaction::removeSubTrans($oldwarehouseout->suptrans_id,'wor',$dout->id);
+           SupTransaction::removeSubTrans($oldwarehouseout->suptrans_id,'dout',$dout->id);
            ///
         
             ///delete paid transaction
@@ -1408,12 +1460,21 @@ class WarehouseoutController extends Controller
         $oldwarehouseout->version += 1;
         $oldwarehouseout->status = "deleted";
         $oldwarehouseout->save();
-        if(!$oldwarehouseout->paidtrans_ids && $oldwarehouseout->paidtrans_ids!= '')
-        {
-            SupTransaction::updatePaidAmount(1,$dout->paid_amount ,$dout->customer_id); 
-        }
-      
-      
+        // if(!$oldwarehouseout->paidtrans_ids && $oldwarehouseout->paidtrans_ids!= '')
+        // {
+        //     SupTransaction::updatePaidAmount(1,$dout->paid_amount ,$dout->customer_id); 
+        // }
+
+        /***coi lai phan nay sau */
+        // $paidbybudget =$dout->paid_amount - $total_return; //tinh so tien con lai da tra cho don ma chua xoa
+        // if(!$oldwarehouseout->paidtrans_ids && $oldwarehouseout->paidtrans_ids!= '' && $paidbybudget > 0)
+        // {
+        //     //cap nhat paid amount cho cac phieu nhap
+        //     SupTransaction::updatePaidAmount( 1,$paidbybudget  ,$din->supplier_id); 
+        // }
+         /***end*/
+
+        \DB::commit();
         return redirect()->route('warehouseout.index')->with('success','Xóa thành công!'); 
     }
     public function warehouseoutPaid($id)
@@ -1526,7 +1587,7 @@ class WarehouseoutController extends Controller
             return back()->with('error','Không tìm thấy phiếu nhập kho!');
         $user = auth()->user();
         //check detail product are exported
-        $detailpros = WarehouseoutDetail::where('wo_id', $id)->where('doc_type','wo')->get();
+        $detailpros = WarehouseoutDetail::where('wo_id', $id)->where('doc_type','wo')->where('is_deleted',0)->get();
         
         //return all old product detail
         $dout = \App\Models\Warehouseout::log_change($oldwarehouseout);
@@ -1536,7 +1597,7 @@ class WarehouseoutController extends Controller
         }
         ///add return sup trans 1 for importing
         // $sps = SupTransaction::createSubTrans($oldwarehouseout->id,'wo',+1,$oldwarehouseout->final_amount, $oldwarehouseout->customer_id);
-        SupTransaction::removeSubTrans($oldwarehouseout->suptrans_id,'wor',$dout->id);
+        SupTransaction::removeSubTrans($oldwarehouseout->suptrans_id,'dout',$dout->id);
          ////delete series for each product
         $wo_series = \App\Models\WarehouseoutDetailSeries::where('wo_id',$oldwarehouseout->id)->where('doc_type','wo')->get();
         foreach($wo_series as $wo_seri)
@@ -1567,7 +1628,8 @@ class WarehouseoutController extends Controller
     public function print_invoice($id)
     {
         $warehouseout = \App\Models\Warehouseout::find($id);
-        $wo_details = \App\Models\WarehouseoutDetail::where('wo_id',$id)->where('doc_type','wo')->get();
+        $wo_details = \App\Models\WarehouseoutDetail::where('wo_id',$id)->where('doc_type','wo')
+            ->where('is_deleted',0)->get();
         foreach($wo_details as $wi_detail)
         {
             $series = "";
@@ -1583,10 +1645,13 @@ class WarehouseoutController extends Controller
             $wi_detail->series = $series;
         }
         $sup_trans = \App\Models\SupTransaction::where('doc_type','wo')->where('doc_id',$warehouseout->id)->first();
-        $paid_amount = $warehouseout->paid_amount;
+        // $paid_amount = $warehouseout->paid_amount;
         $amount_before_paid = $sup_trans->total  ;
-        $amount_before_trans =  $sup_trans->total - $sup_trans->operation* $sup_trans->amount;
-        $amount_after_trans = $sup_trans->total  +  $paid_amount;
+        // $amount_before_trans =  $sup_trans->total - $sup_trans->operation* $sup_trans->amount;
+        // $amount_after_trans = $sup_trans->total  +  $paid_amount;
+        $amount_before_trans = $warehouseout->debtbefore;
+        $amount_after_trans = $warehouseout->debtafter;
+        $paid_amount = $warehouseout->bankpayment;
         $buyer =  \App\Models\User::find($warehouseout->customer_id);
         $amount_after_trans = $buyer->budget;
        
@@ -1734,7 +1799,7 @@ class WarehouseoutController extends Controller
                         </td>
                         
                         <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="text-right  ">
-                            '.number_format($warehousein->paid_amount, 0, '.', ',') .'
+                            '.number_format($paid_amount, 0, '.', ',') .'
                         </td>
                     </tr>
                     <tr>
@@ -1797,7 +1862,7 @@ class WarehouseoutController extends Controller
             return back()->with('error','Không tìm thấy phiếu nhập kho!');
         $user = auth()->user();
         //check detail product are exported
-        $detailpros = WarehouseoutDetail::where('wo_id', $id)->where('doc_type','wo')->get();
+        $detailpros = WarehouseoutDetail::where('wo_id', $id)->where('doc_type','wo')->where('is_deleted',0)->get();
         //return all old product detail
         $dout = \App\Models\Warehouseout::log_change($oldwarehouseout);
         foreach($detailpros as $dtpro)
@@ -1806,7 +1871,7 @@ class WarehouseoutController extends Controller
         }
         ///add return sup trans 1 for importing
         // $sps = SupTransaction::createSubTrans($oldwarehouseout->id,'wo',+1,$oldwarehouseout->final_amount, $oldwarehouseout->customer_id);
-        SupTransaction::removeSubTrans($oldwarehouseout->suptrans_id,'wor',$dout->id);
+        SupTransaction::removeSubTrans($oldwarehouseout->suptrans_id,'dout',$dout->id);
         ///
        ////delete series for each product
         $wo_series = \App\Models\WarehouseoutDetailSeries::where('wo_id',$oldwarehouseout->id)->where('doc_type','wo')->get();
@@ -1991,9 +2056,10 @@ class WarehouseoutController extends Controller
             return response()->json(['msg'=>'không tìm thấy!' ,'status'=>false]);
         
         $user = auth()->user();
-       
+       \DB::beginTransaction();
         //check detail product are exported
-        $detailpros = \App\Models\WarehouseInDetail::where('doc_id',$request->id)->where('doc_type','wr')->get();
+        $detailpros = \App\Models\WarehouseoutDetail::where('wo_id',$request->id)->where('doc_type','wor')
+            ->where('is_deleted',0)->get();
         $flag = 0;
         foreach($detailpros as $dtpro)
         {
@@ -2036,14 +2102,15 @@ class WarehouseoutController extends Controller
         $din = \App\Models\WarehouseOut::log_change($oldwarehousein);
         foreach($detailpros as $dtpro)
         {
-            $wo_detail = \App\Models\WarehouseoutDetail::where('wo_id',$woold->id)->where('doc_type','wo')->where('product_id', $dtpro->product_id)->first();
+            $wo_detail = \App\Models\WarehouseoutDetail::where('wo_id',$woold->id)->where('doc_type','wo')
+            ->where('is_deleted',0)->where('product_id', $dtpro->product_id)->first();
             $wo_detail->qty_returned -= $dtpro->quantity ;
             $wo_detail->save();
 
-            \App\Models\WarehouseInDetail::deleteDetailProVersion($dtpro,$oldwarehousein->cost_extra,$oldwarehousein->wh_id,$din->id);
+            \App\Models\WarehouseoutDetail::deleteReturnDetailProVersion($dtpro,$oldwarehousein->cost_extra,$oldwarehousein->wh_id,$din->id);
         }
         ///delete sup trans 1 for importing
-        SupTransaction::removeSubTrans($oldwarehousein->suptrans_id,'wrr',$din->id);
+        SupTransaction::removeSubTrans($oldwarehousein->suptrans_id,'dout',$din->id);
 
         ///
          ///delete paid transaction
@@ -2085,17 +2152,24 @@ class WarehouseoutController extends Controller
         }
         ////delete old series
         ////add series for each product
-        $sql = "delete from warehousein_detail_series where doc_type='wr' and wi_id=". $oldwarehousein->id;
+        $wor_series = \App\Models\WarehouseoutDetailSeries::where('wo_id',$oldwarehousein->id)->get();
+        foreach($wor_series as $seri)
+        {
+            $wi_seri = \App\Models\WarehouseinDetailSeries::where('product_id',$seri->product_id)
+                ->where('seri',$seri->seri)->where('is_sold',0)->first();
+            $wi_seri->delete();
+        }
+        $sql = "delete from warehouseout_detail_series where doc_type='wor' and   wo_id=". $oldwarehousein->id;
         \DB::select($sql);
-      
         
         $oldwarehousein->status='deleted';
-       $oldwarehousein->version+= 1;
-       $oldwarehousein->save();
+        $oldwarehousein->version+= 1;
+        $oldwarehousein->save();
        ///create log /////////////
         ///create log /////////////
-        $content = 'xóa phiếu trả hàng' ;
-        \App\Models\Log::insertLogNew($content,$oldwarehousein->id,'wr',$user->id);
+        $content = 'xóa phiếu trả xuất hàng' ;
+        \App\Models\Log::insertLogNew($content,$oldwarehousein->id,'wor',$user->id);
+        \DB::commit();
        return redirect()->route('warehouseout.index')->with('sucess','Xóa thành công!');
     }
     public function warehouseoutUpdateReturndetail(Request $request )
@@ -2128,6 +2202,10 @@ class WarehouseoutController extends Controller
         }
 
         $oldwarehousein = \App\Models\Warehouseout::find($data['id']);
+
+        $returned_ids  = json_decode($oldwarehousein->returned_ids);
+        $returned_id = $returned_ids[0]->id;
+        $woold = Warehouseout::find($returned_id);
         // return $oldwarehousein;
         
         if($data['id']==null || $data['id']==0 || $oldwarehousein==null || $oldwarehousein->status != 'returned')
@@ -2152,19 +2230,22 @@ class WarehouseoutController extends Controller
         $user = auth()->user();
         $data['vendor_id'] = $user->id;
         
+        \DB::beginTransaction();
+        
         //check detail product are exported
-        $detailpros = \App\Models\WarehouseInDetail::where('doc_id',$data['id'])->where('doc_type','wr')->get();
+        $detailpros = \App\Models\WarehouseoutDetail::where('wo_id',$data['id'])->where('doc_type','wor')
+        ->where('is_deleted',0)->get();
         $flag = 0;
-        foreach($detailpros as $dtpro)
-        {
-            if($dtpro->qty_sold > 0)
-                $flag = 1;
+        // foreach($detailpros as $dtpro)
+        // {
+        //     if($dtpro->qty_sold > 0)
+        //         $flag = 1;
             
-        }
-        if($flag == 1)
-        {
-            return response()->json(['msg'=>'Đã xuất kho hàng hóa trong phiếu nhập!','status'=>false]);
-        }
+        // }
+        // if($flag == 1)
+        // {
+        //     return response()->json(['msg'=>'Đã xuất kho hàng hóa trong phiếu nhập!','status'=>false]);
+        // }
         //kiem tra co nhieu giao dich rôi ko edit nua vi luc cap nhat se luu so tien da tra vào tk ngân hàng ko đúng so với trước kia
    
         /******thử nghiệm ko kiểm tra nhiều giao dịch cho edit  */
@@ -2182,13 +2263,15 @@ class WarehouseoutController extends Controller
             */
             /******end  thử nghiệm ko kiểm tra nhiều giao dịch cho edit  */
         ////check detail ////////////
-        $olddetails = \App\Models\WarehouseInDetail::where('doc_id',$oldwarehousein->id)->where('doc_type','wr')->get();
+        $olddetails = \App\Models\WarehouseInDetail::where('doc_id',$oldwarehousein->id)
+        ->where('is_deleted',0)
+        ->where('doc_type','wr')->get();
         //update old warehouseindetail to sold
-        foreach($olddetails as $olddetail)
-        {
-            \DB::select('update warehousein_detail_series set is_sold = 1 where wi_id ='.
-                 $oldwarehousein->id . ' and doc_type="wr" and product_id = '. $olddetail->product_id);
-        }
+        // foreach($olddetails as $olddetail)
+        // {
+        //     \DB::select('update warehousein_detail_series set is_sold = 1 where wi_id ='.
+        //          $oldwarehousein->id . ' and doc_type="wr" and product_id = '. $olddetail->product_id);
+        // }
         $details = $request->products;
         $count_item = 0;
         foreach ($details as $detail)
@@ -2207,18 +2290,21 @@ class WarehouseoutController extends Controller
             }
             foreach ($series as $seri)
             {
-                if (\App\Models\WarehouseinDetailSeries::check_seri_in_avaible($seri,$detail['id'],$data['wh_id']))
-                {
-                     //if exits update old warehouseindetail to un sold and return false
-                    foreach($olddetails as $olddetail)
-                    {
-                        \DB::select('update warehousein_detail_series set is_sold = 0 where wi_id ='.
-                            $oldwarehousein->id . ' doc_type="wr" and product_id = '. $olddetail->product_id);
-                    }
-                    return response()->json(['msg'=>'Số seri '.$seri.' đã có!','status'=>false]);
-                }    
+
+                $seri = trim ($seri);
                 if ($seri == '')
-                    continue;
+                     continue;
+                $wo_detail = \App\Models\WarehouseoutDetailSeries::where('wo_id',$woold->id)->where('doc_type','wo')
+                ->where('seri',$seri)
+                ->where('product_id',$detail['id'])->first();
+               
+
+                if (! $wo_detail  )
+                {
+                     
+                    return response()->json(['msg'=>'Số seri '.$wo_detail ->id.' không có!','status'=>false]);
+                }    
+                
                
             }
         }
@@ -2227,22 +2313,21 @@ class WarehouseoutController extends Controller
         //delete all old product detail
       
         //tao mot ham log_chang cho return sau
-        $returned_ids  = json_decode($oldwarehousein->returned_ids);
-        $returned_id = $returned_ids[0]->id;
-        $woold = Warehouseout::find($returned_id);
+
        
        
         $din = \App\Models\WarehouseOut::log_change($oldwarehousein);
         foreach($detailpros as $dtpro)
         {
-            $wo_detail = \App\Models\WarehouseoutDetail::where('wo_id',$woold->id)->where('doc_type','wo')->where('product_id', $dtpro->product_id)->first();
+            $wo_detail = \App\Models\WarehouseoutDetail::where('wo_id',$woold->id)
+            ->where('doc_type','wo')->where('is_deleted',0)->where('product_id', $dtpro->product_id)->first();
             $wo_detail->qty_returned -= $dtpro->quantity ;
             $wo_detail->save();
 
-            \App\Models\WarehouseInDetail::deleteDetailProVersion($dtpro,$oldwarehousein->cost_extra,$oldwarehousein->wh_id,$din->id);
+            \App\Models\WarehouseoutDetail::deleteReturnDetailProVersion($dtpro,$oldwarehousein->cost_extra,$oldwarehousein->wh_id,$din->id);
         }
         ///delete sup trans 1 for importing
-        SupTransaction::removeSubTrans($oldwarehousein->suptrans_id,'wrr',$din->id);
+        SupTransaction::removeSubTrans($oldwarehousein->suptrans_id,'dout',$din->id);
 
         ///
          ///delete paid transaction
@@ -2282,10 +2367,19 @@ class WarehouseoutController extends Controller
                 $fts->delete();
             }
         }
-        ////delete old series
+        ////khi tra hang ta them nhap seri vao vao nhap kho, gio cap nhat thi xoa seri nhap kho
         ////add series for each product
-        $sql = "delete from warehousein_detail_series where doc_type='wr' and wi_id=". $oldwarehousein->id;
+        $wor_series = \App\Models\WarehouseoutDetailSeries::where('wo_id',$oldwarehousein->id)->get();
+        foreach($wor_series as $seri)
+        {
+            $wi_seri = \App\Models\WarehouseinDetailSeries::where('product_id',$seri->product_id)
+                ->where('seri',$seri->seri)->where('is_sold',0)->first();
+            $wi_seri->delete();
+        }
+        $sql = "delete from warehouseout_detail_series where doc_type='wor' and   wo_id=". $oldwarehousein->id;
         \DB::select($sql);
+        // $sql = "delete from warehousein_detail_series where doc_type='wi' and  is_sold = 0  and wi_id=". $woold->id;
+        // \DB::select($sql);
       
         
         ///save new product detail ////////////
@@ -2338,11 +2432,12 @@ class WarehouseoutController extends Controller
             if($detail['quantity']<=0)
                 continue;
             $product_detail['doc_id'] = $oldwarehousein->id;
-            $product_detail['doc_type'] = 'wr';
+            $product_detail['doc_type'] = 'wor';
             $product_detail['product_id']= $detail['id'];
             $product_detail['quantity'] = $detail['quantity'];
             $product_detail['price'] = $detail['price'];
             $product_detail['wh_id'] = $data['wh_id'];
+            $product_detail['wo_id'] = $oldwarehousein->id;
             $inv = \App\Models\Inventory::where('product_id',$detail['id'])
                 ->where('wh_id',$data['wh_id'])
                 ->first();
@@ -2361,39 +2456,26 @@ class WarehouseoutController extends Controller
              }
              $product_detail['is_seri'] = $count_n>0?1:0;
             //  return $product_detail;
-            \App\Models\WarehouseInDetail::create($product_detail);
+             
+            
+            //  return $product_detail;
+            $old_detail_before_return =  \App\Models\WarehouseoutDetail::where('wo_id',$woold->id)
+            ->where('is_deleted',0)
+            ->where('doc_type','wo')
+            ->where('product_id',$detail['id'])->first();
+            \App\Models\WarehouseoutDetail::r_create($product_detail,$old_detail_before_return,$detail['seri'],$oldwarehousein->id );
+            \App\Models\InventoryDetail::create($product_detail);
             //increase stock
-            Inventory::addProduct($product_detail['product_id'], $data['wh_id'],$product_detail['quantity'], $product_detail['price'] ,$cost_extra);
-            ///update group price//////
-            $product_prices = $detail['pricelist'];
-            foreach ($product_prices as $product_price)
-            {
-                \App\Models\GroupPrice::updateProductPriceId($product_price['gpid'],$product_price['price']);
-            }
-
-             ////add series for each product
-             $series =  explode(",",  $detail['seri']); 
-             foreach ($series as $seri)
-             {
-                $seri = trim ($seri);
-                if ($seri == '')
-                    continue;
-                \App\Models\WarehouseinDetailSeries::c_create($oldwarehousein->id,$seri, $detail['id'],'wr',$data['wh_id']);
-             }
-
-             $wo_detail = \App\Models\WarehouseoutDetail::where('wo_id',$woold->id)->where('doc_type','wo')->where('product_id', $product_detail['product_id'])->first();
-             $wo_detail->qty_returned += $product_detail['quantity'];
-             $wo_detail->save();
- 
+            Inventory::addProduct_no_update_price($product_detail['product_id'], $data['wh_id'],$product_detail['quantity'], $product_detail['price'] ,$cost_extra);
 
         }
         ///create SupTransaction
-        $sps = SupTransaction::createSubTrans($oldwarehousein->id,'wr',1,$data['final_amount'], $data['customer_id']);
+        $sps = SupTransaction::createSubTrans($oldwarehousein->id,'wor',1,$data['final_amount'], $data['customer_id']);
         $oldwarehousein->suptrans_id = $sps->id;
         ///create paid transaction
         if($totalbankpaid> 0)
         {
-            $bank_doc = BankTransaction::insertBankTrans($user->id,$data['bank_id'],-1,$oldwarehousein->id,'wr',$totalbankpaid);
+            $bank_doc = BankTransaction::insertBankTrans($user->id,$data['bank_id'],-1,$oldwarehousein->id,'wor',$totalbankpaid);
             SupTransaction::createSubTrans($bank_doc->id,'fi',-1, $totalbankpaid, $data['customer_id']); 
             // $oldwarehousein->paidtrans_id = $bank_doc->id;
             $in_ids=array();
@@ -2416,6 +2498,7 @@ class WarehouseoutController extends Controller
         ///create log /////////////
         $content = 'cập nhật phiếu trả hàng' ;
         \App\Models\Log::insertLogNew($content,$oldwarehousein->id,'wr',$user->id);
+        \DB::commit();
        return response()->json(['msg'=>'Cập nhật thành công!','status'=>true]);
     }
     public function warehouseoutSaveReturndetail(Request $request )
@@ -2481,11 +2564,11 @@ class WarehouseoutController extends Controller
         $user = auth()->user();
         $data['vendor_id'] = $user->id;
        
-        //tru tien ship de luu don hang dung voi nha cung cap
-        $data['paid_amount'] -= $data['shipcost'];
-        $data['final_amount'] -= $data['shipcost'];
+        
         ///save product detail ////////////
         ////check detail//////////////////
+        \DB::beginTransaction();
+        $oldwarehouseout = Warehouseout::find($data['id']);
         $details = $request->products;
         $count_item = 0;
         foreach ($details as $detail)
@@ -2502,24 +2585,37 @@ class WarehouseoutController extends Controller
                 return response()->json(['msg'=>'Số series '.$count_n.' khác số số lượng trong đơn'.$detail['quantity'] .'!','status'=>false]);
                  
             }
-
+            $wo_detail = \App\Models\WarehouseoutDetail::where('wo_id',$oldwarehouseout->id)->where('doc_type','wo')
+            ->where('is_deleted',0)
+            ->where('product_id',$detail['id'])->first();
+            if($detail['quantity'] > $wo_detail->quantity - $wo_detail->qty_returned )
+            {
+                return response()->json(['msg'=>'Số lượng trả '.$detail['quantity'].' lơn hơn có thể trả !','status'=>false]);
+                 
+            }
+            $series =  explode(",",  $detail['seri']);
             foreach ($series as $seri)
             {
-                if (\App\Models\WarehouseinDetailSeries::check_seri_in_avaible($seri,$detail['id'],$data['wh_id']))
-                    return response()->json(['msg'=>'Số seri '.$seri.' đã có!','status'=>false]);
+                $seri = trim ($seri);
                 if ($seri == '')
-                    continue;
-               
+                     continue;
+                $wo_detail = \App\Models\WarehouseoutDetailSeries::where('wo_id',$oldwarehouseout->id)->where('doc_type','wo')
+                ->where('seri',$seri)
+                ->where('product_id',$detail['id'])->first();
+                if (!$wo_detail)
+                {
+                    return response()->json(['msg'=>'Số seri '.$seri.' không  có!','status'=>false]);
+                }
             }
         }
         $cost_extra = ($data['shipcost'] -  $data['discount_amount'])/ $count_item ;
         $data['cost_extra'] = $cost_extra ;
         $data['status']  = 'returned';
-        $woold = Warehouseout::find($data['id']);
+        $woold = $oldwarehouseout;
 
         $data['bankpayment'] = $totalbankpaid;
         $data['debtbefore'] = $deb_before;
-        $data['debtafter'] =  $deb_before + $data['final_amount'];
+        $data['debtafter'] =  $deb_before + $data['final_amount'] - $totalbankpaid;
         $in_ids=array();
         $in_id = new \App\Models\Number();
         $in_id->id = $woold->id;
@@ -2532,6 +2628,7 @@ class WarehouseoutController extends Controller
         $in_id->id = $wi->id;
         array_push($in_ids,$in_id);
         $woold->returned_ids = json_encode($in_ids);
+    
         $woold->save();
 
        
@@ -2542,11 +2639,13 @@ class WarehouseoutController extends Controller
             if( $detail['quantity'] <= 0)
                 continue;
             $product_detail['doc_id'] = $wi->id;
-            $product_detail['doc_type'] = 'wr';
+            $product_detail['wo_id'] = $wi->id;
+            $product_detail['doc_type'] = 'wor';
             $product_detail['product_id']= $detail['id'];
             $product_detail['quantity'] = $detail['quantity'];
             $product_detail['price'] = $detail['price'];
             $product_detail['wh_id'] = $data['wh_id'];
+            $product_detail['operation'] = 1;
             $inv = \App\Models\Inventory::where('product_id',$detail['id'])
                 ->where('wh_id',$data['wh_id'])
                 ->first();
@@ -2565,40 +2664,21 @@ class WarehouseoutController extends Controller
             }
             $product_detail['is_seri'] = $count_n>0?1:0;
             //  return $product_detail;
-            \App\Models\WarehouseInDetail::create($product_detail);
+            $old_detail =  \App\Models\WarehouseoutDetail::where('wo_id',$oldwarehouseout->id)->where('doc_type','wo')
+            ->where('is_deleted',0)->where('product_id',$detail['id'])->first();
+            \App\Models\WarehouseoutDetail::r_create($product_detail,$old_detail,$detail['seri'],$wi->id);
+            \App\Models\InventoryDetail::create($product_detail);
             //increase stock
-            Inventory::addProduct($product_detail['product_id'], $data['wh_id'],$product_detail['quantity'], $product_detail['price'] ,$cost_extra);
-            ///update group price//////
-            $product_prices = $detail['pricelist'];
-            foreach ($product_prices as $product_price)
-            {
-                $product_price['price'] = intval($product_price['price'] );
-                \App\Models\GroupPrice::updateProductPriceId($product_price['gpid'],$product_price['price']);
-            }
-            ////add series for each product
-            $series =  explode(",",  $detail['seri']); 
-            foreach ($series as $seri)
-            {
-                $seri = trim ($seri);
-                if ($seri == '')
-                    continue;
-                \App\Models\WarehouseinDetailSeries::c_create($wi->id,$seri, $detail['id'],'wr',$data['wh_id']);
-               
-
-            
-            }
-            $wo_detail = \App\Models\WarehouseoutDetail::where('wo_id',$woold->id)->where('doc_type','wo')->where('product_id', $product_detail['product_id'])->first();
-            $wo_detail->qty_returned += $product_detail['quantity'];
-            $wo_detail->save();
+            Inventory::addProduct_no_update_price($product_detail['product_id'], $data['wh_id'],$product_detail['quantity'], $product_detail['price'] ,$cost_extra);
         }
 
         ///create SupTransaction
-        $sps = SupTransaction::createSubTrans($wi->id,'wr',1,$data['final_amount'], $data['customer_id']);
+        $sps = SupTransaction::createSubTrans($wi->id,'wor',1,$data['final_amount'], $data['customer_id']);
         $wi->suptrans_id = $sps->id;
         ///create paid transaction
         if($totalbankpaid> 0)
         {
-            $bank_doc = BankTransaction::insertBankTrans($user->id,$data['bank_id'],-1,$wi->id,'wr',$totalbankpaid);
+            $bank_doc = BankTransaction::insertBankTrans($user->id,$data['bank_id'],-1,$wi->id,'wor',$totalbankpaid);
             SupTransaction::createSubTrans($bank_doc->id,'fi',-1, $totalbankpaid, $data['customer_id']); 
             $in_ids=array();
             $in_id = new \App\Models\Number();
@@ -2615,9 +2695,19 @@ class WarehouseoutController extends Controller
        }
        
        $wi->save();
+
+    //    $paidbybudget =   $wi->final_amount - $wi->paid_amount; //tinh so tien con lai da tra cho don ma chua xoa
+    //    if($paidbybudget > 0)
+    //    {
+    //        //cap nhat paid amount cho cac phieu nhap
+    //        SupTransaction::updatePaidAmount( 1,$paidbybudget  ,$din->supplier_id); 
+   
+    //    }
+
        ///create log /////////////
        $content = 'thêm phiếu trả hàng' ;
-       \App\Models\Log::insertLogNew($content,$wi->id,'wr',$user->id);
+       \App\Models\Log::insertLogNew($content,$wi->id,'wor',$user->id);
+       DB::commit();
        return response()->json(['msg'=>'Thêm đơn nhập kho thành công!','status'=>true]);
 
  
@@ -2651,7 +2741,7 @@ class WarehouseoutController extends Controller
             return back()->with('error','Không tìm thấy phiếu nhập kho!');
         $user = auth()->user();
         //check detail product are exported
-        $detailpros = WarehouseoutDetail::where('wo_id', $id)->where('doc_type','wo')->get();
+        $detailpros = WarehouseoutDetail::where('wo_id', $id)->where('is_deleted',0)->where('doc_type','wo')->get();
         
         //return all old product detail
         $dout = \App\Models\Warehouseout::log_change($oldwarehouseout);
@@ -2661,7 +2751,7 @@ class WarehouseoutController extends Controller
         }
         ///add return sup trans 1 for importing
         // $sps = SupTransaction::createSubTrans($oldwarehouseout->id,'wo',1,$oldwarehouseout->final_amount, $oldwarehouseout->customer_id);
-        SupTransaction::removeSubTrans($oldwarehouseout->suptrans_id,'wor',$dout->id);
+        SupTransaction::removeSubTrans($oldwarehouseout->suptrans_id,'dout',$dout->id);
         ///add return money sup
         if($data['paid_amount'] > 0)
         {

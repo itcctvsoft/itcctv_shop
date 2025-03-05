@@ -39,7 +39,7 @@
                             (Tồn kho hiện tại: <span id="spstock"> </span> )
                         </div>
                     </div>
-                    <div class="mt-3">
+                    <div class="mt-3" style="display:none">
                         <label for="regular-form-1" class="form-label">Đơn giá</label>
                         <input   class="form-control" type="text" id= "price" name="price" value=''/>
                         <div class="form-help"> * nên để giá trị mặc định nếu không chắc về giá trị sản phẩm </div>

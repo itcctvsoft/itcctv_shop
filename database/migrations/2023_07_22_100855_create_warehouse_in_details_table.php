@@ -24,6 +24,8 @@ return new class extends Migration
             $table->integer('is_seri')->default(0);
             $table->dateTime('expired_at')->nullable();
             $table->integer('benefit')->default(0);
+            $table->integer('qty_returned')->default(0);
+            $table->integer('is_deleted')->default(0);
             $table->timestamps();
         });
     }

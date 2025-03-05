@@ -18,6 +18,8 @@
                         <th class="whitespace-nowrap">SẢN PHẨM</th>
                         <th class="text-center whitespace-nowrap">KHO</th>
                         <th class="text-center whitespace-nowrap">SỐ LƯỢNG</th>
+                        <th class="text-center whitespace-nowrap">Giá vốn</th>
+                        <th class="text-center whitespace-nowrap">Giá bán</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -32,6 +34,12 @@
                         <td class='text-center'>
                              {{ $inventory->quantity}}  
                         </td>
+                        <td class='text-center'>
+                            {{number_format($product->price_avg,0,',','.')}}
+                        </td>
+                        <td class='text-center'>
+                            {{number_format($product->price_out,0,',','.')}}
+                        </td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -41,10 +49,9 @@
             <table class="table table-report -mt-2">
                 <thead>
                     <tr>
-                        <th class="whitespace-nowrap">SERIES</th>
-                    </tr>
-                    <tr>
-                        <th> Kho </th>
+                        <td class="whitespace-nowrap">SERIES</td>
+                     
+                        <td> Kho </td>
                     </tr>
                 </thead>
                 <tbody>
@@ -67,6 +74,7 @@
                     <tr>
                         <th class="whitespace-nowrap">Mã phiếu</th>
                         <th class="whitespace-nowrap">Nhà cung cấp</th>
+                        <th class="whitespace-nowrap">Kho</th>
                         <th class="whitespace-nowrap">Số lượng</th>
                         <th class="whitespace-nowrap">Đơn giá</th>
                         <th class="whitespace-nowrap">Tồn kho</th>
@@ -78,116 +86,42 @@
                     @if(/*$detail_in->doc_id != 0*/1)
                             <?php
                             // dd($detail_ins);
-                                $class_name = $detail_in->quantity < 0?'text-danger':'text-primary';
-
+                                // $class_name = $detail_in->quantity < 0?'text-danger':'text-primary';
+                                $class_name = $detail_in->operation < 0?'text-danger':'text-primary';
                             ?>
                             <tr class="intro-x {{ $class_name}}">
                                 <td> 
                                     <?php
-                                    if($detail_in->doc_id == 0)
-                                    {
-                                        echo 'Giao dịch hủy';
-                                    }
-                                    else
-                                    {
-                                        if($detail_in->doc_type=="wi")
-                                        {
-                                            $url = route('warehousein.show',$detail_in->doc_id);
-                                        }
-                                        if($detail_in->doc_type=="wo")
-                                        {
-                                            $url = route('warehouseout.show',$detail_in->doc_id);
-                                        }
-                                        if($detail_in->doc_type=="ic")
-                                        {
-                                            $url = route('inventorycheck.show',  $detail_in->doc_id);
-                                        }
-                                        if($detail_in->doc_type=="wi" || $detail_in->doc_type=="wo")
-                                            echo '<a href="'.$url.'">'. $detail_in->code .'</a>';
-                                        else
-                                        {
-                                            if($detail_in->doc_type=="ic")
-                                            {
-                                                echo '<a href="'.$url.'"> phiếu kiểm kho </a>';
-                                            }
-                                            else
-                                            {
-                                                if($detail_in->doc_type =='mi')
-                                                {
-                                                    echo 'phiếu chuyển kho bảo hành';
-                                                }  
-                                                else
-                                                {
-                                                    if($detail_in->doc_type =='mi')
-                                                    {
-                                                        echo 'kho bảo hành chuyển kho bán';
-                                                        
-                                                    }  
-                                                    else
-                                                    {
-                                                        if($detail_in->doc_type =='wm')
-                                                        {
-                                                            echo 'kho bán chuyển kho bảo hành';
-                                                        }  
-                                                        else
-                                                        {
-                                                            if($detail_in->doc_type =='wd')
-                                                            {
-                                                                echo 'kho bán chuyển kho hủy';
-                                                            }  
-                                                            else
-                                                            {
-                                                                if($detail_in->doc_type =='wp')
-                                                                {
-                                                                    echo 'kho bán chuyển kho tài sản';
-                                                                }  
-                                                                else
-                                                                {
-                                                                    if($detail_in->doc_type =='pi')
-                                                                    {
-                                                                        echo 'kho tài sản chuyển kho bán';
-                                                                    }  
-                                                                    else
-                                                                    {
-                                                                        if($detail_in->doc_type =='ti')
-                                                                        {
-                                                                            echo '<a href="'.route('warehousetransfer.show',$detail_in->doc_id).'">Phiếu chuyển kho</a>';
-                                                                        }  
-                                                                        else
-                                                                        {
-                                                                            if($detail_in->doc_type =='co')
-                                                                            {
-                                                                                echo '<a href="'.route('combocreation.show',$detail_in->doc_id).'">Phiếu tạo combo</a>';
-                                                                            }  
-                                                                            else
-                                                                            {
-                                                                                echo $detail_in->doc_type;
-                                                                            } 
-                                                                        } 
-                                                                    } 
-                                                                }
-                                                            } 
-                                                        } 
-                                                    } 
-                                                } 
-                                            }
-                                        }
-                                    }
+                                    $tengd = \App\Http\Controllers\HelpController::loai_giaodich($detail_in->doc_type);
+                                    $url = \App\Http\Controllers\HelpController::url_giaodich($detail_in->doc_type,$detail_in->doc_id);
+                                    // dd($tengd,$url);
+                                 
+ 
                                     ?>
+                                      <a href="{{$url}}">{{$tengd}}</a> 
                                 </td>
                                 <td>
                                 
-                                    @if ($detail_in->doc_type=="wi" || $detail_in->doc_type=="wo")
+                                    @if ($detail_in->doc_type=="wi" || $detail_in->doc_type=="wo"
+                                            ||$detail_in->doc_type=="din" || $detail_in->doc_type=="dout")
                                     <?php
-                                    if (isset($detail_in->user_id))
-                                        $url_user = route('user.showsup',$detail_in->user_id);
-                                    else
-                                        $url_user = "";
-                                    $person =  \App\Models\User::find($detail_in->user_id);
-                                    ?>
-                                    <a href="{{$url_user}}">  {{ $person? $person->full_name:''  }}  </a>
+                                    $document = $detail_in->document();
+                                    if (!$document)
+                                        continue;
+                                    $url_user ='';
+                                    $url_name = '';
+                                    if ( $document->user)
+                                    {
+                                        $url_user = route('user.showsup',$document->user->id);
+                                        $url_name = $document->user->full_name;
+                                    }  
+                                    ?> 
+                                    <a href="{{$url_user}}">  {{ $url_name  }}  </a>
                                     @endif
                                     
+                                </td>
+                                <td>
+                                    {{$detail_in->warehouse->title }}  
                                 </td>
                                 <td>
                                     {{$detail_in->quantity }}  
@@ -196,7 +130,7 @@
                                     {{$detail_in->price }}  
                                 </td>
                                 <td>
-                                    {{$detail_in->prebalance  + $detail_in->quantity }}  
+                                    {{$detail_in->prebalance  + $detail_in->quantity*$detail_in->operation  }}  
                                 </td>
                                 <td>
                                     {{$detail_in->created_at}}
@@ -206,6 +140,12 @@
                     @endforeach
                 </tbody>
             </table>
+        </div>
+        <div class="intro-y col-span-12 flex flex-wrap sm:flex-row sm:flex-nowrap items-center">
+            <nav class="w-full sm:w-auto sm:mr-auto">
+                {{$detail_ins->links('vendor.pagination.tailwind')}}
+            </nav>
+           
         </div>
        
         

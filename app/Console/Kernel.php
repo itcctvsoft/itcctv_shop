@@ -10,9 +10,15 @@ class Kernel extends ConsoleKernel
     /**
      * Define the application's command schedule.
      */
+    protected $commands = [
+        \App\Console\Commands\DatabaseBackup::class,
+    ];
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
+        // $schedule->command('backup:db')->daily();
+        // $schedule->command('backup:db')->everyMinute(); 
+        $schedule->command('backup:db')->cron('* * * * *'); 
     }
 
     /**
@@ -24,4 +30,5 @@ class Kernel extends ConsoleKernel
 
         require base_path('routes/console.php');
     }
+   
 }

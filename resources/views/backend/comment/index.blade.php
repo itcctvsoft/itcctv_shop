@@ -26,10 +26,10 @@
             <table class="table table-report -mt-2">
                 <thead>
                     <tr>
-                        <th class="whitespace-nowrap">URL</th>
-                        <th class="whitespace-nowrap">TÊN</th>
-                        <th class="text-center whitespace-nowrap">NỘI DUNG</th>
-                        <th class="text-center whitespace-nowrap">TRẠNG THÁI</th>
+                        <th class=" ">URL</th>
+                        <th class=" ">TÊN</th>
+                        <th class=" ">NỘI DUNG</th>
+                        <th class=" ">TRẠNG THÁI</th>
                         
                         <th></th>
                     </tr>
@@ -38,7 +38,7 @@
                     @foreach($comments as $item)
                     <tr class="intro-x">
                         <td>
-                            <a target="_blank" href="{{$item->url}}" class="font-medium whitespace-nowrap">{{$item->url}}</a> 
+                            <a target="_blank" href="{{$item->url}}" class=" ">{{$item->url}}</a> 
                         </td>
                         <td class="text-left"> {{$item->name}}</td>
                         <td class="text-left"> {{$item->content}}</td>

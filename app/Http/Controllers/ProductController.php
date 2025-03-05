@@ -41,6 +41,34 @@ class ProductController extends Controller
         $cat_id = 0;
         return view('backend.products.index',compact('products','breadcrumb','active_menu','cats','cat_id'));
     }
+
+    public function productJmodsearch(Request $request)
+    {
+         
+        if($request->data  )
+        { 
+             
+
+            $searchdata =$request->data;
+            $sdatas = explode(" ",$searchdata);
+            $searchdata = implode("%", $sdatas);
+            $products = DB::table('products')                 
+            ->select('id','title','photo','price','expired')
+            
+            ->where('title','LIKE','%'.$searchdata.'%')
+            ->where('type','normal')
+            ->where('status','active')
+            ->limit(50)
+            ->orderBy('products.title','asc')
+            ->get();
+            return response()->json(['msg'=>$products,'status'=>true]);
+        }
+        else
+        {
+            return response()->json(['msg'=>'','status'=>false]);
+        }
+    }
+
     public function productPrint (Request $request)
     {
         $func = "product_list";
@@ -171,9 +199,272 @@ class ProductController extends Controller
         }
     }
 
-     
+    public function productJsearch(Request $request)
+    {
+        if($request->data && $request->warehouse_id)
+        { 
+            $searchdata =$request->data;
+            $sdatas = explode(" ",$searchdata);
+            $searchdata = implode("%", $sdatas);
 
-     
+            $wh_id = $request->warehouse_id;
+            // $binventorys = DB::table('b_inventories')
+            // ->select('b_inventories.*' )
+            // ->join(\DB::raw($query),
+            // 'b_inventories.product_id', '=', 'np.idpro') 
+            // ->paginate($this->pagesize)->withQueryString();
+            $query = "(select product_id ,quantity from b_inventories where wh_id = ".$wh_id.") as np";
+            $products = DB::table('products')
+             ->select ('products.id','products.title','products.photo','np.quantity','products.expired')
+             ->where('title','LIKE','%'.$searchdata.'%')
+             ->where('type','<>','service')
+             ->leftJoin(\DB::raw($query),'products.id','=','np.product_id')
+             ->orderBy('products.title','asc')
+             ->get();
+             
+             return response()->json(['msg'=>$products,'status'=>true]);
+        }
+        else
+        {
+            return response()->json(['msg'=>'','status'=>false]);
+        }
+
+    }
+
+    public function productTsearch(Request $request)
+    {
+        if($request->data && $request->warehouse_id)
+        { 
+            $searchdata =$request->data;
+            $sdatas = explode(" ",$searchdata);
+            $searchdata = implode("%", $sdatas);
+
+            $wh_id = $request->warehouse_id;
+            // $binventorys = DB::table('b_inventories')
+            // ->select('b_inventories.*' )
+            // ->join(\DB::raw($query),
+            // 'b_inventories.product_id', '=', 'np.idpro') 
+            // ->paginate($this->pagesize)->withQueryString();
+            $query = "(select product_id ,quantity from  inventories where wh_id = ".$wh_id.") as np";
+            $products = DB::table('products')
+             ->select ('products.id','products.title','products.photo','products.price_avg as price','np.quantity','products.expired')
+             ->where('title','LIKE','%'.$searchdata.'%')
+             ->where('np.quantity','>',0)
+             ->leftJoin(\DB::raw($query),'products.id','=','np.product_id')
+             ->orderBy('products.title','asc')
+             ->get();
+             
+             return response()->json(['msg'=>$products,'status'=>true]);
+        }
+        else
+        {
+            return response()->json(['msg'=>'','status'=>false]);
+        }
+
+    }
+    public function productGPriceSearch(Request $request)
+    {
+        $this->validate($request,[
+            'product_id'=>'numeric|required',
+        ]);
+        $query = "(select id, price, ugroup_id from group_prices where product_id = ".$request->product_id.") as np";
+        $groupprices = DB::table('u_groups')
+        ->select ('u_groups.id','u_groups.title', 'np.price','np.id as gpid')
+        ->where('status','active')
+        ->leftJoin(\DB::raw($query),'u_groups.id','=','np.ugroup_id')
+        ->orderBy('id','ASC')->get();
+        foreach($groupprices as $grouppice)
+        {
+            if( $grouppice->gpid == null)
+            {
+                $data['ugroup_id'] = $grouppice->id;
+                $data['price'] = 0;
+                $data['product_id'] = $request->product_id;
+                \App\Models\GroupPrice::create($data);
+            }
+        }
+        $groupprices = DB::table('u_groups')
+        ->select ('u_groups.id','u_groups.title', 'np.price','np.id as gpid')
+        ->where('status','active')
+        ->leftJoin(\DB::raw($query),'u_groups.id','=','np.ugroup_id')
+        ->orderBy('id','ASC')->get();
+
+         
+        $productseris = \App\Models\WarehouseinDetailSeries::where('product_id',$request->product_id)
+            ->where('is_sold',0)->get();
+        $i = 0;
+        $series = "";
+        foreach ($productseris as $productseri)
+        {
+            if ($i > 0)
+                $series .= ',';
+            $series .= $productseri->seri;
+            $i ++;
+        }
+
+        return response()->json(['msg'=>$groupprices,'series'=>$series,'status'=>true]);
+    }
+    
+    public function productJsearchwf(Request $request)
+    {
+        if($request->data && $request->warehouse_id)
+        { 
+            $searchdata =$request->data;
+            $sdatas = explode(" ",$searchdata);
+            $searchdata = implode("%", $sdatas);
+
+            $wh_id = $request->warehouse_id;
+            
+            $query = "(select product_id ,quantity from inventories where wh_id = ".$wh_id."  ) as np";
+            $products = DB::table('products')
+             ->select ('products.id','products.title','products.photo','products.price_avg as price','np.quantity','products.expired','products.type')
+             ->where('title','LIKE','%'.$searchdata.'%') 
+             ->leftJoin(\DB::raw($query),'products.id','=','np.product_id')
+             ->where('np.quantity','>',0)
+             ->where('stock','>',0)
+             ->orderBy('products.title','asc')
+             ->get();
+             return response()->json(['msg'=>$products,'status'=>true]);
+        }
+        else
+        {
+            return response()->json(['msg'=>'','status'=>false]);
+        }
+    }
+    public function productJsearchic(Request $request)
+    {
+        if($request->data && $request->warehouse_id)
+        { 
+            $searchdata =$request->data;
+            $sdatas = explode(" ",$searchdata);
+            $searchdata = implode("%", $sdatas);
+
+            $wh_id = $request->warehouse_id;
+            
+            $query = "(select product_id ,quantity from inventories where wh_id = ".$wh_id."  ) as np";
+            $products = DB::table('products')
+             ->select ('products.id','products.title','products.photo','products.price_avg as price','np.quantity','products.expired')
+             ->where('title','LIKE','%'.$searchdata.'%') 
+             ->leftJoin(\DB::raw($query),'products.id','=','np.product_id')
+             
+             ->orderBy('products.title','asc')
+             ->get();
+             return response()->json(['msg'=>$products,'status'=>true]);
+        }
+        else
+        {
+            return response()->json(['msg'=>'','status'=>false]);
+        }
+    }
+    public function productJsearchwi(Request $request)
+    {
+        if($request->data && $request->warehouse_id)
+        { 
+            $searchdata =$request->data;
+            $sdatas = explode(" ",$searchdata);
+            $searchdata = implode("%", $sdatas);
+
+            $wh_id = $request->warehouse_id;
+            
+            $query = "(select product_id ,quantity from inventories where wh_id = ".$wh_id.") as np";
+            $query2 = "(select seri  from   where product_id = ".$wh_id.") as np";
+            $products = DB::table('products')
+             ->select ('products.id','products.title','products.photo','products.price_in as price','np.quantity','products.expired')
+             ->where('title','LIKE','%'.$searchdata.'%')->where('type','normal')
+             ->leftJoin(\DB::raw($query),'products.id','=','np.product_id')
+             ->orderBy('products.title','asc')
+             ->get();
+             return response()->json(['msg'=>$products,'status'=>true]);
+        }
+        else
+        {
+            return response()->json(['msg'=>'','status'=>false]);
+        }
+    }
+    public function productJsearchco(Request $request)
+    {
+        if($request->data  )
+        { 
+            $searchdata =$request->data;
+            $sdatas = explode(" ",$searchdata);
+            $searchdata = implode("%", $sdatas);
+
+            
+            
+           
+            $products = DB::table('products')
+             ->select ('products.*' )
+             ->where('title','LIKE','%'.$searchdata.'%')->where('type','normal')
+             
+             ->orderBy('products.title','asc')
+             ->get();
+             return response()->json(['msg'=>$products,'status'=>true]);
+        }
+        else
+        {
+            return response()->json(['msg'=>'','status'=>false]);
+        }
+    }
+
+    public function productJsearchwo(Request $request)
+    {
+        if($request->data && $request->warehouse_id)
+        { 
+            $searchdata =$request->data;
+            $sdatas = explode(" ",$searchdata);
+            $searchdata = implode("%", $sdatas);
+
+            $wh_id = $request->warehouse_id;
+            $customer_id = $request->customer_id;
+            $customer = \App\Models\User::find($customer_id);
+            // return $customer;
+            if(  $customer == null || $customer->ugroup_id ==null)
+            {
+                //  return 'b';
+                $query = "(select product_id ,quantity from inventories where wh_id = ".$wh_id.") as np";
+                // $query1 = "(select product_id ,price from group_prices where wh_id = ".$wh_id.") as np";
+                $products = DB::table('products')
+                 ->select ('products.id','products.title','products.photo','products.price_in as price_in','products.price_out as price_out','products.price as price','products.price_avg as price_avg','products.sold','products.type','np.quantity','products.expired')
+                 ->where('title','LIKE','%'.$searchdata.'%')
+                
+                 ->leftJoin(\DB::raw($query),'products.id','=','np.product_id')
+                 ->where(function($query_sub)  
+                 {
+                    $query_sub->where('np.quantity','>',0)
+                           ->orwhere('products.type', 'service');
+                 })
+                 ->orderBy('products.sold','desc')
+                 ->get();
+                 return response()->json(['msg'=>$products,'status'=>true]);
+            }
+            else
+            {
+                // return 'a';
+                $query = "(select product_id ,quantity from inventories where wh_id = ".$wh_id.") as np";
+                $query1 = "(select product_id ,price from group_prices where ugroup_id = ".$customer->ugroup_id.") as up";
+                $products = DB::table('products')
+                 ->select ('products.id','products.title','products.photo','products.price_in as price_in','products.price_out as price_out','products.price as price','products.price_avg as price_avg','products.sold','products.type','np.quantity','products.expired')
+                 ->where('title','LIKE','%'.$searchdata.'%')
+                 ->leftJoin(\DB::raw($query),'products.id','=','np.product_id')
+                 ->leftJoin(\DB::raw($query1),'products.id','=','up.product_id')
+                 ->where(function($query_sub)  
+                 {
+                    $query_sub->where('np.quantity','>',0)
+                           ->orwhere('products.type', 'service');
+                 })
+                 ->orderBy('products.title','asc')
+                 ->get();
+                 return response()->json(['msg'=>$products,'status'=>true]);
+            }
+            
+            
+           
+        }
+        else
+        {
+            return response()->json(['msg'=>'','status'=>false]);
+        }
+    }
 
     public function productJsearchms(Request $request)
     {
@@ -235,7 +526,44 @@ class ProductController extends Controller
             return response()->json(['msg'=>'','status'=>false]);
         }
     }
-    
+    public function itcctv_jsearch(Request $request)
+    {
+        $this->validate($request,[
+            'searchdata'=>'string|required',
+        ]);
+        $helpController = new \App\Http\Controllers\HelpController();
+        return $helpController->get_products($request->searchdata);
+        
+    }
+    public function itcctv_productdetail(Request $request)
+    {
+        $this->validate($request,[
+            'id'=>'numeric|required',
+        ]);
+        $helpController = new \App\Http\Controllers\HelpController();
+        return $helpController->get_detailproduct($request->id);
+        
+    }
+    public function productStock_quantity(Request $request)
+    {
+        if($request->product_id && $request->warehouse_id)
+        { 
+            $pro_id =$request->product_id;
+            $wh_id = $request->warehouse_id;
+         
+            $binventory = DB::table('b_inventories')->where('product_id',$pro_id)->where('wh_id',$wh_id)->first();
+            if($binventory)
+                return response()->json(['msg'=>$binventory->quantity,'status'=>true]);
+            else
+                {
+                    return response()->json(['msg'=>'','status'=>false]);
+                }
+        }
+        else
+        {
+            return response()->json(['msg'=>'','status'=>false]);
+        }
+    }
     public function productStatus(Request $request)
     {
         $func = "product_edit";
@@ -269,8 +597,7 @@ class ProductController extends Controller
         <li class="breadcrumb-item"><a href="#">/</a></li>
         <li class="breadcrumb-item  " aria-current="page"><a href="'.route('product.index').'">hàng hóa</a></li>
         <li class="breadcrumb-item active" aria-current="page"> tạo hàng hóa </li>';
-        $categories = Category::where('is_parent',0)
-            ->where('status','active')->orderBy('title','ASC')->get();
+        $categories = Category::where('status','active')->orderBy('title','ASC')->get();
         $brands = Brand::where('status','active')
             ->orderBy('title','ASC')->get();
 
@@ -471,7 +798,7 @@ class ProductController extends Controller
                 <li class="breadcrumb-item"><a href="#">/</a></li>
                 <li class="breadcrumb-item  " aria-current="page"><a href="'.route('product.index').'">products</a></li>
                 <li class="breadcrumb-item active" aria-current="page"> điều chỉnh products </li>';
-                $categories = Category::where('is_parent',0)->orderBy('title','ASC')->get();
+                $categories = Category::orderBy('title','ASC')->get();
                 $brands = Brand::orderBy('title','ASC')->get();
                 $tags = \App\Models\Tag::where('status','active')->orderBy('title','ASC')->get();
                 $tag_ids =DB::select("select tag_id from tag_products where product_id = ".$product->id)  ;  
@@ -531,7 +858,7 @@ class ProductController extends Controller
                 $data['parent_cat_id'] = $parent_cat->parent_id;
 
             $status = $product->fill($data)->save();
-           
+            // $product->update_kiot();
             //update tags
             $tag_ids = $request->tag_ids;
             if($tag_ids && count($tag_ids)> 0)
@@ -621,6 +948,7 @@ class ProductController extends Controller
             $productextend = \App\Models\Productextend::create($data);
         }
         return view('backend.products.viewprice',compact('product','breadcrumb','active_menu','group_prices','productextend'));
+      
     }
     public function productPriceUpdate(Request $request)
     {
@@ -643,6 +971,7 @@ class ProductController extends Controller
             $gprice->price = isset($data['gp'.$gprice->ugroup_id])?$data['gp'.$gprice->ugroup_id]:0;
             $gprice->save();
         }
+        // return back()->with('success','Đã lưu thông tin');
         return redirect()->route('product.priceview',$data['id'])->with('success','cập nhật thành công');
     }
 }

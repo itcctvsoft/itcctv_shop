@@ -151,8 +151,8 @@ class BankController extends Controller
                 // $content = 'edit bankaccount title: '.$data['title'] ;
                 $user = auth()->user();
                 // \App\Models\Log::insertLog($content,$user->id);
-                $content = 'điều chỉnh tài khoản' ;
-                \App\Models\Log::insertLogNew($content, $bankaccount->id,'btrans',$user->id);
+                $content = 'điều chỉnh thông tin tài khoản' ;
+                \App\Models\Log::insertLogNew($content, $bankaccount->id,'bedit',$user->id);
               
                 return redirect()->route('bankaccount.index')->with('success','Cập nhật thành công');
             }

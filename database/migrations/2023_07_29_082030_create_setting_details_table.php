@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('setting_details', function (Blueprint $table) {
             $table->id();
             $table->string('company_name') ;
-            $table->string('web_title') ;
             $table->string('address') ;
             
             $table->string('logo')->nullable() ;
@@ -34,7 +33,10 @@ return new class extends Migration
             $table->string('itcctv_email')->nullable();
             $table->string('itcctv_pass')->nullable();
             $table->string('public_key')->nullable();
-            $table->mediumtext('paymentinfo')->nullable();
+            $table->string('web_title')->nullable();
+            $table->string('paymentinfo')->nullable();
+            $table->mediumtext('logo_bct')->nullable();
+            
             $table->timestamps();
         });
     }

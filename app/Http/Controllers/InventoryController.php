@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use App\Models\Inventory;
-
+use App\Models\InventoryDetail;
 class InventoryController extends Controller
 {
     /**
@@ -32,22 +32,8 @@ class InventoryController extends Controller
                 .' ) as a left join (select * from warehouses where status ="active" ) as b'
                 .' on a.wh_id = b.id ');
              
-            $data['detail_ins']=\DB::select(  ' select a.* , b.* from (select * from  warehouse_in_details  where   product_id ='.$id
-            .'  ) as a  left join (select id, code, supplier_id as user_id from warehouse_ins where status="active" ) as b'
-            .' on a.doc_id = b.id ');
-
-            $data['detail_outs']=\DB::select(  ' select a.*, b.*  from (select id,wo_id as doc_id,product_id,price,quantity,created_at, prebalance,doc_type from  warehouseout_details  where  product_id ='.$id
-            .'  ) as a  left join (select id, code, customer_id as user_id from warehouseouts where status = "active" ) as b'
-            .' on a.doc_id = b.id ');
-
-            foreach($data['detail_outs'] as $detail_out)
-            {
-                $detail_out->quantity *= -1;
-            }
-
-            $data['detail_ins'] = array_merge($data['detail_ins'], $data['detail_outs']);
-           
-            usort( $data['detail_ins'], [$this, 'compareColumn']);
+            
+            $data['detail_ins'] = InventoryDetail::where('product_id',$product->id)->orderBy('id','desc')->paginate($this->pagesize);
             // dd($data['detail_ins']);
         }
       
@@ -75,23 +61,25 @@ class InventoryController extends Controller
                 .' ) as a left join (select * from warehouse_ins where wh_id ='.$inventory->wh_id.' ) as b'
                 .' on a.wi_id = b.id ');
              
-            $data['detail_ins']=\DB::select(  ' select a.* , b.* from (select * from  warehouse_in_details  where   product_id ='.$inventory->product_id
-            .' and wh_id = '. $inventory->wh_id.' ) as a  left join (select id, code, supplier_id as user_id from warehouse_ins where wh_id ='.$inventory->wh_id.' ) as b'
-            .' on a.doc_id = b.id ');
+            // $data['detail_ins']=\DB::select(  ' select a.* , b.* from (select * from  warehouse_in_details  where   product_id ='.$inventory->product_id
+            // .' and wh_id = '. $inventory->wh_id.' ) as a  left join (select id, code, supplier_id as user_id from warehouse_ins where wh_id ='.$inventory->wh_id.' ) as b'
+            // .' on a.doc_id = b.id ');
 
-            $data['detail_outs']=\DB::select(  ' select a.*, b.*  from (select id,wo_id as doc_id,product_id,price,quantity,created_at, prebalance,doc_type from  warehouseout_details  where  product_id ='.$inventory->product_id
-            .' and wh_id = '. $inventory->wh_id.' ) as a  left join (select id, code, customer_id as user_id from warehouseouts where wh_id ='.$inventory->wh_id.' ) as b'
-            .' on a.doc_id = b.id ');
+            // $data['detail_outs']=\DB::select(  ' select a.*, b.*  from (select id,wo_id as doc_id,product_id,price,quantity,created_at, prebalance,doc_type from  warehouseout_details  where  product_id ='.$inventory->product_id
+            // .' and wh_id = '. $inventory->wh_id.' ) as a  left join (select id, code, customer_id as user_id from warehouseouts where wh_id ='.$inventory->wh_id.' ) as b'
+            // .' on a.doc_id = b.id ');
 
-            foreach($data['detail_outs'] as $detail_out)
-            {
-                $detail_out->quantity *= -1;
-            }
+            // foreach($data['detail_outs'] as $detail_out)
+            // {
+            //     $detail_out->quantity *= -1;
+            // }
 
-            $data['detail_ins'] = array_merge($data['detail_ins'], $data['detail_outs']);
-            usort( $data['detail_ins'], [$this, 'compareColumn']);
+            // $data['detail_ins'] = array_merge($data['detail_ins'], $data['detail_outs']);
+            // usort( $data['detail_ins'], [$this, 'compareColumn']);
+
+            $data['detail_ins'] = InventoryDetail::where('product_id',$inventory->product_id)->orderBy('id','desc')->paginate($this->pagesize);
         }
-        
+        // dd ($data['detail_ins']);
         $data['inventory'] = $inventory;
         $data['active_menu']="i_list";
         $data['breadcrumb'] = '
@@ -99,6 +87,12 @@ class InventoryController extends Controller
         <li class="breadcrumb-item active" aria-current="page"> <a href="'.route('inventory.index').'">ds hàng hóa tồn kho</a></li>
         <li class="breadcrumb-item active" aria-current="page"> ds chi tiết series</li>';
         return view('backend.inventories.series',$data);
+
+    }
+    public function capnhatdetailinvetory()
+    {
+          
+           
 
     }
     public function compareColumn($a, $b) {

@@ -8,7 +8,8 @@
     </h2>
     <div class="grid grid-cols-12 gap-6 mt-5">
         <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
-           
+            <a href="{{route('order.create')}}" class="btn btn-primary shadow-md mr-2">Thêm đặt hàng</a>
+            
             <div class="hidden md:block mx-auto text-slate-500">Hiển thị trang {{$orders->currentPage()}} trong {{$orders->lastPage()}} trang</div>
             <div class="w-full sm:w-auto mt-3 sm:mt-0 sm:ml-auto md:ml-0">
                 <div class="w-56 relative text-slate-500">
@@ -26,10 +27,9 @@
                 <thead>
                     <tr>
                         <th class="whitespace-nowrap">KHÁCH HÀNG</th>
-                       
+                        <th class="whitespace-nowrap">KHO</th>
                         <th class="text-center whitespace-nowrap">SỐ TIỀN</th>
                         <th class="text-center whitespace-nowrap">NGÀY LẬP</th>
-                        <th>Trạng thái</th>
                         <th></th>
                     </tr>
                 </thead>
@@ -43,7 +43,11 @@
                             </a>
                             
                         </td>
-                        
+                        <td>
+                             
+                            {{\App\Models\Warehouse::where('id',$item->wh_id)->value('title')}}
+                            
+                        </td>
                         <td class="text-right">
                             
                             {{ number_format($item->final_amount, 0, '.', ',');}}
@@ -52,9 +56,6 @@
                         
                         <td>
                             {{$item->created_at}}
-                        </td>
-                        <td>
-                            {{$item->status}}
                         </td>
                         <td class="table-report__action w-56">
                             <div class="flex justify-center items-center">
@@ -67,8 +68,9 @@
                                         
                                          
                                         <li><a href="{{route('order.show',$item->id)}}" class="dropdown-item flex items-center mr-3" href="javascript:;"> <i data-lucide="eye" class="w-4 h-4 mr-1"></i> Xem </a></li>
-                                        <li><a href="{{route('order.edit',$item->id)}}" class="dropdown-item flex items-center mr-3" href="javascript:;"> <i data-lucide="check-square" class="w-4 h-4 mr-1"></i> Hoàn thành </a></li>
-                                        
+                                        <li><a href="{{route('order.edit',$item->id)}}" class="dropdown-item flex items-center mr-3" href="javascript:;"> <i data-lucide="check-square" class="w-4 h-4 mr-1"></i> Edit </a></li>
+                                        <li><a href="{{route('order.out',$item->id)}}" class="dropdown-item flex items-center mr-3" href="javascript:;"> <i data-lucide="aperture" class="w-4 h-4 mr-1"></i> Chuyển phiếu bán</a></li>
+                                       
                                         <li> 
                                             <form action="{{route('order.destroy',$item->id)}}" method = "post">
                                             @csrf
@@ -81,7 +83,6 @@
                             </div> 
                             </div>
                         </td>
-                       
                     </tr>
 
                     @endforeach

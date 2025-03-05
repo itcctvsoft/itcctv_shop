@@ -121,64 +121,64 @@ class ReportController extends Controller
         {
             if($time == "today")
             {
-                $sql1 = "select sum(benefit) as tongloinhuan from warehouseout_details where wo_id != 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at)";
+                $sql1 = "select sum(benefit) as tongloinhuan from warehouseout_details where is_deleted= 0 and doc_type ='wo' and wo_id != 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at)";
                 $sql2 = "select count(id) as sodon from warehouseouts where status='active' and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at)";
                 $sql4 = "select sum(final_amount) as tongdoanhthu from warehouseouts where status='active' and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at)";
-                $sql3 = "select b.title as ngay, a.tongbansp, a.loinhuan from (select sum(benefit) as loinhuan , sum(price * quantity) as tongbansp, product_id from warehouseout_details where wo_id != 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at) group by product_id) as a left join products b on a.product_id = b.id;";
-                $sql5 = "select b.title as ngay,   a.sodon from (select   count(product_id) as sodon, product_id from warehouseout_details where wo_id != 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at) group by product_id) as a left join products b on a.product_id = b.id;";
+                $sql3 = "select b.title as ngay, a.tongbansp, a.loinhuan from (select sum(benefit) as loinhuan , sum(price * quantity) as tongbansp, product_id from warehouseout_details where is_deleted=0 and doc_type ='wo' and wo_id != 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at) group by product_id) as a left join products b on a.product_id = b.id;";
+                $sql5 = "select b.title as ngay,   a.sodon from (select   count(product_id) as sodon, product_id from warehouseout_details where is_deleted = 0 and doc_type ='wo' and wo_id != 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at) group by product_id) as a left join products b on a.product_id = b.id;";
                 $sql6 = "select sum(operation*total) as thuchi  from free_transactions where type_id <> 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at)   ";
                 $sql7 = "select sum(operation*total) as thuchi , day(created_at) as ngay from free_transactions where type_id <> 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at)  group by ngay ";
-                $sql8 = "select a.product_id, sum(a.benefit) as tongloinhuan , b.title , sum(a.quantity) as quantity from (select * from warehouseout_details where wo_id != 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at) ) as a left join products as b on a.product_id = b.id group by a.product_id, b.title";
+                $sql8 = "select a.product_id, sum(a.benefit) as tongloinhuan , b.title , sum(a.quantity-a.qty_returned) as quantity from (select * from warehouseout_details where is_deleted = 0 and doc_type ='wo' and wo_id != 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at) ) as a left join products as b on a.product_id = b.id group by a.product_id, b.title";
        
             }
             if($time == "week")
             {
                 $sql1="SELECT sum(benefit) as tongloinhuan FROM warehouseout_details
-                WHERE wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at <= NOW();";
+                WHERE is_deleted = 0 and wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at <= NOW();";
                 $sql2="SELECT count(id) as sodon FROM warehouseouts
                     WHERE status='active' and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at <= NOW();";
                 $sql3="SELECT sum(price*quantity) as tongbansp ,sum(benefit)  as loinhuan, day(created_at) as ngay FROM warehouseout_details
-                    WHERE wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at <= NOW() group by ngay;";
+                    WHERE is_deleted = 0 and wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at <= NOW() group by ngay;";
                 $sql4="SELECT sum(final_amount) as tongdoanhthu FROM warehouseouts
                     WHERE status='active' and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at <= NOW();";
                 $sql5="SELECT count(id) as sodon , day(created_at) as ngay FROM warehouseouts
                     WHERE status='active' and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at <= NOW() group by ngay;;";
                 $sql6 = "select sum(operation*total) as thuchi  from free_transactions WHERE type_id <> 0 and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at <= NOW(); ";
                 $sql7 = "select sum(operation*total) as thuchi , day(created_at) as ngay  from free_transactions WHERE type_id <> 0 and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at <= NOW() group by ngay ";
-                $sql8 = "select a.product_id, sum(a.benefit) as tongloinhuan , b.title , sum(a.quantity) as quantity from (select * from warehouseout_details WHERE wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at <= NOW())  as a left join products as b on a.product_id = b.id group by a.product_id,b.title";
+                $sql8 = "select a.product_id, sum(a.benefit) as tongloinhuan , b.title ,sum(a.quantity-a.qty_returned)  as quantity from (select * from warehouseout_details WHERE is_deleted = 0 and doc_type ='wo' and wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at <= NOW())  as a left join products as b on a.product_id = b.id group by a.product_id,b.title";
             }
             if($time == "30ngay")
             {
                 $sql1="SELECT sum(benefit) as tongloinhuan FROM warehouseout_details
-                    WHERE wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at <= NOW();";
+                    WHERE is_deleted = 0 and wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at <= NOW();";
                 $sql2="SELECT count(id) as sodon FROM warehouseouts
                     WHERE status='active' and created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at <= NOW();";
                 $sql3="SELECT sum(price*quantity) as tongbansp ,sum(benefit)  as loinhuan, day(created_at) as ngay FROM warehouseout_details
-                    WHERE wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at <= NOW() group by ngay;";
+                    WHERE is_deleted = 0 and wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at <= NOW() group by ngay;";
                 $sql4="SELECT sum(final_amount) as tongdoanhthu FROM warehouseouts
                     WHERE status='active' and created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at <= NOW();";
                 $sql5="SELECT count(id) as sodon , day(created_at) as ngay FROM warehouseouts
                     WHERE status='active' and created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at <= NOW() group by ngay;;";
                 $sql6 = "select sum(operation*total) as thuchi  from free_transactions WHERE type_id <> 0 and created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at <= NOW(); ";
                 $sql7 = "select sum(operation*total) as thuchi , day(created_at) as ngay  from free_transactions WHERE type_id <> 0 and created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at <= NOW() group by ngay ";
-                $sql8 = "select a.product_id, sum(a.benefit) as tongloinhuan , b.title , sum(a.quantity) as quantity from (select * from warehouseout_details WHERE wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at <= NOW())  as a left join products as b on a.product_id = b.id group by a.product_id, b.title";
+                $sql8 = "select a.product_id, sum(a.benefit) as tongloinhuan , b.title , sum(a.quantity-a.qty_returned)  as quantity from (select * from warehouseout_details WHERE is_deleted = 0 and doc_type ='wo' and wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at <= NOW())  as a left join products as b on a.product_id = b.id group by a.product_id, b.title";
        
             }
             if($time == "hangthang")
             {
                 $sql1="SELECT sum(benefit) as tongloinhuan FROM warehouseout_details
-                    WHERE wo_id != 0 and year(NOW()) = year(created_at) ";
+                    WHERE is_deleted = 0 and wo_id != 0 and year(NOW()) = year(created_at) ";
                 $sql2="SELECT count(id) as sodon FROM warehouseouts
                     WHERE status='active' and year(NOW()) = year(created_at)   ;";
                 $sql3="SELECT sum(price*quantity) as tongbansp ,sum(benefit)  as loinhuan, month(created_at) as ngay FROM warehouseout_details
-                    WHERE  wo_id != 0 and year(NOW()) = year(created_at)  group by ngay;";
+                    WHERE is_deleted = 0 and  wo_id != 0 and year(NOW()) = year(created_at)  group by ngay;";
                 $sql4="SELECT sum(final_amount) as tongdoanhthu FROM warehouseouts
                     WHERE status='active' and year(NOW()) = year(created_at)   ;";
                 $sql5="SELECT  count(id)  as sodon, month(created_at) as ngay FROM warehouseouts
                     WHERE status='active' and year(NOW()) = year(created_at)  group by ngay;";
                 $sql6 = "select sum(operation*total) as thuchi  from free_transactions  WHERE type_id <> 0 and year(NOW()) = year(created_at) ";
                 $sql7 = "select sum(operation*total) as thuchi , month(created_at) as ngay from free_transactions  WHERE type_id <> 0 and year(NOW()) = year(created_at) group by ngay";
-                $sql8 = "select a.product_id, sum(a.benefit) as tongloinhuan , b.title , sum(a.quantity) as quantity from (select * from warehouseout_details  WHERE wo_id <> 0 and year(NOW()) = year(created_at))  as a left join products as b on a.product_id = b.id group by a.product_id, b.title";
+                $sql8 = "select a.product_id, sum(a.benefit) as tongloinhuan , b.title , sum(a.quantity-a.qty_returned)  as quantity from (select * from warehouseout_details  WHERE is_deleted = 0 and doc_type ='wo' and wo_id <> 0 and year(NOW()) = year(created_at))  as a left join products as b on a.product_id = b.id group by a.product_id, b.title";
        
             }
         }
@@ -210,22 +210,22 @@ class ReportController extends Controller
                 $where .= " day(a.created_at) = ".$data['select_day'];
             }
            
-            $where2 = " where a.wo_id != 0 ";
+            $where2 = " where a.wo_id != 0 and doc_type ='wo' ";
             if ($where != "")
                 $where2 .= " and ".$where;
             if ($where != "")
                 $where = " where ".$where;
-            $sql1 = "select sum(benefit) as tongloinhuan from warehouseout_details as a  ". $where2;
+            $sql1 = "select sum(benefit) as tongloinhuan from (select * from warehouseout_details where is_deleted = 0) as a  ". $where2;
             $sql2 = "select count(id) as sodon from (select * from warehouseouts where status ='active') as a ". $where;;
-            $sql3="SELECT sum(price*quantity) as tongbansp ,sum(benefit)  as loinhuan, day(created_at) as ngay FROM warehouseout_details
-                as a ".$where2."  group by ngay;";
+            $sql3="SELECT sum(price*quantity) as tongbansp ,sum(benefit)  as loinhuan, day(created_at) as ngay FROM (select * from warehouseout_details
+            where is_deleted = 0 )  as a ".$where2."  group by ngay;";
             $sql4="SELECT sum(final_amount) as tongdoanhthu FROM (select * from warehouseouts where status ='active') as a
                  ".$where."  ;";
             $sql5="SELECT  count(id)  as sodon, day(created_at) as ngay FROM (select * from warehouseouts where status ='active') as a
                  ".$where." group by ngay;";
             $sql6 = "select sum(operation*total) as thuchi  from (select * from free_transactions  where type_id <>0) as a ".$where;
             $sql7 = "select sum(operation*total) as thuchi, day(created_at) as ngay  from (select * from free_transactions  where type_id <>0)   as a  ".$where." group by ngay";
-            $sql8 = "select d.product_id, sum(d.benefit) as tongloinhuan , b.title , sum(d.quantity) as quantity from (select * from warehouseout_details as a " .$where2. ")  as d left join products as b on d.product_id = b.id group by d.product_id, b.title";
+            $sql8 = "select d.product_id, sum(d.benefit) as tongloinhuan , b.title , sum(quantity-qty_returned)  as quantity from (select * from (select * from warehouseout_details where is_deleted = 0) as a " .$where2. ")  as d left join products as b on d.product_id = b.id group by d.product_id, b.title";
        
         }
         
@@ -277,22 +277,22 @@ class ReportController extends Controller
         {
             if($time == "today")
             {
-                $sql1 = "select sum(benefit) as tongloinhuan from warehouseout_details where wo_id != 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at)";
+                $sql1 = "select sum(benefit) as tongloinhuan from warehouseout_details where is_deleted = 0 and doc_type='wo' and wo_id != 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at)";
                 $sql2 = "select count(id) as sodon from warehouseouts where status='active' and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at)";
                 $sql4 = "select sum(final_amount) as tongdoanhthu from warehouseouts where status='active' and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at)";
-                $sql3 = "select b.title as ngay, a.tongbansp, a.loinhuan from (select sum(benefit) as loinhuan , sum(price * quantity) as tongbansp, product_id from warehouseout_details where wo_id != 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at) group by product_id) as a left join products b on a.product_id = b.id;";
-                $sql5 = "select b.title as ngay,   a.sodon from (select   count(product_id) as sodon, product_id from warehouseout_details where wo_id != 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at) group by product_id) as a left join products b on a.product_id = b.id;";
+                $sql3 = "select b.title as ngay, a.tongbansp, a.loinhuan from (select sum(benefit) as loinhuan , sum(price * quantity) as tongbansp, product_id from warehouseout_details where is_deleted = 0 and doc_type='wo' and wo_id != 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at) group by product_id) as a left join products b on a.product_id = b.id;";
+                $sql5 = "select b.title as ngay,   a.sodon from (select   count(product_id) as sodon, product_id from warehouseout_details where is_deleted = 0 and doc_type='wo' and wo_id != 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at) group by product_id) as a left join products b on a.product_id = b.id;";
                 $sql6 = "select sum(operation*total) as thuchi  from free_transactions where type_id <> 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at)   ";
                 $sql7 = "select sum(operation*total) as thuchi , day(created_at) as ngay from free_transactions where type_id <> 0 and month(now()) = month(created_at) and day(now()) = day(created_at) and year(now()) = year(created_at)  group by ngay ";
             }
             if($time == "week")
             {
                 $sql1="SELECT sum(benefit) as tongloinhuan FROM warehouseout_details
-                WHERE wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at <= NOW();";
+                WHERE is_deleted = 0 and wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at <= NOW();";
                 $sql2="SELECT count(id) as sodon FROM warehouseouts
                     WHERE status='active' and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at <= NOW();";
                 $sql3="SELECT sum(price*quantity) as tongbansp ,sum(benefit)  as loinhuan, day(created_at) as ngay FROM warehouseout_details
-                    WHERE wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at <= NOW() group by ngay;";
+                    WHERE is_deleted = 0 and  wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at <= NOW() group by ngay;";
                 $sql4="SELECT sum(final_amount) as tongdoanhthu FROM warehouseouts
                     WHERE status='active' and created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND created_at <= NOW();";
                 $sql5="SELECT count(id) as sodon , day(created_at) as ngay FROM warehouseouts
@@ -303,11 +303,11 @@ class ReportController extends Controller
             if($time == "30ngay")
             {
                 $sql1="SELECT sum(benefit) as tongloinhuan FROM warehouseout_details
-                    WHERE wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at <= NOW();";
+                    WHERE is_deleted = 0 and wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at <= NOW();";
                 $sql2="SELECT count(id) as sodon FROM warehouseouts
                     WHERE status='active' and created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at <= NOW();";
                 $sql3="SELECT sum(price*quantity) as tongbansp ,sum(benefit)  as loinhuan, day(created_at) as ngay FROM warehouseout_details
-                    WHERE wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at <= NOW() group by ngay;";
+                    WHERE is_deleted = 0 and wo_id != 0 and created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at <= NOW() group by ngay;";
                 $sql4="SELECT sum(final_amount) as tongdoanhthu FROM warehouseouts
                     WHERE status='active' and created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) AND created_at <= NOW();";
                 $sql5="SELECT count(id) as sodon , day(created_at) as ngay FROM warehouseouts
@@ -318,11 +318,11 @@ class ReportController extends Controller
             if($time == "hangthang")
             {
                 $sql1="SELECT sum(benefit) as tongloinhuan FROM warehouseout_details
-                    WHERE wo_id != 0 and year(NOW()) = year(created_at) ";
+                    WHERE is_deleted = 0 and wo_id != 0 and year(NOW()) = year(created_at) ";
                 $sql2="SELECT count(id) as sodon FROM warehouseouts
                     WHERE status='active' and year(NOW()) = year(created_at)   ;";
                 $sql3="SELECT sum(price*quantity) as tongbansp ,sum(benefit)  as loinhuan, month(created_at) as ngay FROM warehouseout_details
-                    WHERE  wo_id != 0 and year(NOW()) = year(created_at)  group by ngay;";
+                    WHERE is_deleted = 0 and  wo_id != 0 and year(NOW()) = year(created_at)  group by ngay;";
                 $sql4="SELECT sum(final_amount) as tongdoanhthu FROM warehouseouts
                     WHERE status='active' and year(NOW()) = year(created_at)   ;";
                 $sql5="SELECT  count(id)  as sodon, month(created_at) as ngay FROM warehouseouts
@@ -359,15 +359,15 @@ class ReportController extends Controller
                 $where .= " day(a.created_at) = ".$data['select_day'];
             }
            
-            $where2 = " where a.wo_id != 0 ";
+            $where2 = " where a.wo_id != 0 and doc_type='wo'  ";
             if ($where != "")
                 $where2 .= " and ".$where;
             if ($where != "")
                 $where = " where ".$where;
-            $sql1 = "select sum(benefit) as tongloinhuan from warehouseout_details as a  ". $where2;
+            $sql1 = "select sum(benefit) as tongloinhuan from (select *from warehouseout_details where is_deleted = 0) as a  ". $where2;
             $sql2 = "select count(id) as sodon from (select * from warehouseouts where status ='active') as a ". $where;;
-            $sql3="SELECT sum(price*quantity) as tongbansp ,sum(benefit)  as loinhuan, day(created_at) as ngay FROM warehouseout_details
-                as a ".$where2."  group by ngay;";
+            $sql3="SELECT sum(price*quantity) as tongbansp ,sum(benefit)  as loinhuan, day(created_at) as ngay FROM (select * from warehouseout_details
+             where is_deleted = 0)   as a ".$where2."  group by ngay;";
             $sql4="SELECT sum(final_amount) as tongdoanhthu FROM (select * from warehouseouts where status ='active') as a
                  ".$where."  ;";
             $sql5="SELECT  count(id)  as sodon, day(created_at) as ngay FROM (select * from warehouseouts where status ='active') as a
@@ -549,13 +549,19 @@ class ReportController extends Controller
         
         foreach($data['debtcus'] as $debt)
         {
-            $sql = "select sum(final_amount) as tong from warehouseouts where status='active' and customer_id = ".$debt->id;
+            $sql = "select sum(final_amount) as tong from warehouseouts where status='active'   and customer_id = ".$debt->id;
             $res = \DB::select($sql);
             $debt->tongban = $res[0]->tong;
+            $sql = "select sum(final_amount) as tong from warehouseouts where status='returned'   and customer_id = ".$debt->id;
+            $res = \DB::select($sql);
+            $debt->tongban -= $res[0]->tong;
             
-            $sql = "select sum(b.benefit) as tong from (select * from warehouseouts where status='active' and  customer_id = ".$debt->id.") as a , warehouseout_details b where a.id = b.wo_id ";
+            
+            $sql = "select sum(b.benefit / b.quantity*(b.quantity-b.qty_returned)) as tong from (select * from warehouseouts where status='active' and  customer_id = ".$debt->id.") as a , (select * from warehouseout_details where is_deleted = 0) as b where a.id = b.wo_id and b.doc_type='wo' ";
             $res = \DB::select($sql);
             $debt->loinhuan = $res[0]->tong;
+            
+           
            
         }
 
@@ -600,10 +606,10 @@ class ReportController extends Controller
             $sql = "select sum(final_amount) as tong from warehouse_ins where status='active' and supplier_id = ".$debt->id;
             $res = \DB::select($sql);
             $debt->tongnhap = $res[0]->tong;
-            $sql = "select sum(b.price*b.qty_sold) as tong from (select * from warehouse_ins where  status='active' and supplier_id = ".$debt->id.") as a , warehouse_in_details b where a.id = b.doc_id ";
+            $sql = "select sum(b.price*b.qty_sold) as tong from (select * from warehouse_ins where  status='active' and supplier_id = ".$debt->id.") as a ,(select * from warehouse_in_details where is_deleted = 0) as b where a.id = b.doc_id ";
             $res = \DB::select($sql);
             $debt->tongban = $res[0]->tong;
-            $sql = "select sum(b.benefit) as tong from (select * from warehouse_ins where status='active' and  supplier_id = ".$debt->id.") as a , warehouse_in_details b where a.id = b.doc_id ";
+            $sql = "select sum(b.benefit) as tong from (select * from warehouse_ins where status='active' and  supplier_id = ".$debt->id.") as a , (select * from warehouse_in_details where is_deleted = 0) as b  where a.id = b.doc_id ";
             $res = \DB::select($sql);
             $debt->loinhuan = $res[0]->tong;
             $tongtonkho += $debt->tongnhap - $debt->tongban ;
@@ -639,18 +645,18 @@ class ReportController extends Controller
         if($cat_id == 0)
         {
             $sql = "select d.loinhuan, d.soluongnhap,d.tiennhap,d.soluongxuat,d.tienxuat, (d.soluongnhap - d.soluongxuat) as tonkho , f.title, f.id from (select a.* , b.tienxuat, b.soluongxuat, b.loinhuan from (select product_id, sum(price * quantity) as tiennhap, 
-            sum(quantity) as soluongnhap from warehouse_in_details where doc_id != 0 and doc_type='wi' group by product_id) as a 
+            sum(quantity) as soluongnhap from warehouse_in_details where is_deleted = 0 and doc_id != 0 and doc_type='wi' group by product_id) as a 
             left join (select product_id, sum(price * quantity) as tienxuat, sum(quantity) as soluongxuat, 
-            sum(benefit) as loinhuan from warehouseout_details where  wo_id != 0 group by product_id) as b on a.product_id = b.product_id) 
+            sum(benefit) as loinhuan from warehouseout_details where is_deleted = 0 and doc_type='wo' and wo_id != 0 group by product_id) as b on a.product_id = b.product_id) 
             as d left join products f on d.product_id = f.id order by  ".$data['order_name']." ".
             $data['order_type'];
         }
         else
         {
             $sql = "select d.loinhuan, d.soluongnhap,d.tiennhap,d.soluongxuat,d.tienxuat, (d.soluongnhap - d.soluongxuat) as tonkho , f.title, f.id from (select a.* , b.tienxuat, b.soluongxuat, b.loinhuan from (select product_id, sum(price * quantity) as tiennhap, 
-            sum(quantity) as soluongnhap from warehouse_in_details where doc_id != 0 and doc_type='wi' group by product_id) as a 
+            sum(quantity) as soluongnhap from warehouse_in_details where is_deleted = 0 and  doc_id != 0 and doc_type='wi' group by product_id) as a 
             left join (select product_id, sum(price * quantity) as tienxuat, sum(quantity) as soluongxuat, 
-            sum(benefit) as loinhuan from warehouseout_details where  wo_id != 0 group by product_id) as b on a.product_id = b.product_id) 
+            sum(benefit) as loinhuan from warehouseout_details where is_deleted = 0 and doc_type='wo' and wo_id != 0 group by product_id) as b on a.product_id = b.product_id) 
             as d left join (select * from products where cat_id = ".$cat_id.") as f on d.product_id = f.id order by  ".$data['order_name']." ".
             $data['order_type'];
         }

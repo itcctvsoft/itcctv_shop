@@ -90,6 +90,23 @@
                         <td class="text-right">
                             
                             {{ number_format($item->final_amount, 0, '.', ',');}}
+                            <?php
+                            $in_ids = json_decode($item->returned_ids);
+                             
+                            if($item->status =='active' && $in_ids && count($in_ids) > 0)
+                            {
+                                // dd($in_ids);
+                                $ids = collect($in_ids)->pluck('id')->toArray();
+                                $return_wos =  \App\Models\WarehouseIn::whereIn('id', $ids)->where('status','returned')->get();
+                               
+                                $sum_return = 0;
+                                foreach($return_wos as $return_wo)
+                                {
+                                    $sum_return += $return_wo->final_amount;
+                                }
+                                echo '<br/>Trả hàng: '.(number_format($sum_return, 0,',','.'));
+                            }
+                        ?>
                             
                         </td>
                         <td class="text-right">
@@ -125,7 +142,16 @@
                                             echo '<li> <a href=" '. route('warehousein.paid',$item->id).'" class="dropdown-item flex items-center mr-3" href="javascript:;"> <i data-lucide="dollar-sign" class="w-4 h-4 mr-1"></i> Trả tiền </a></li>';
                                         }
                                         ?>
-                                        
+                                        @if($item->status == 'returned')
+                                            <li><a href="{{route('warehousein.edit',$item->id)}}" class="dropdown-item flex items-center mr-3" href="javascript:;"> <i data-lucide="check-square" class="w-4 h-4 mr-1"></i> Edit </a></li>
+                                            <li> 
+                                                <form action="{{route('warehousein.destroyreturndetail',$item->id)}}" method = "post">
+                                                @csrf
+                                                 <input type="hidden" value="{{$item->id}}" name="id" />
+                                                <a class="dropdown-item flex items-center text-danger dltBtn" data-id="{{$item->id}}" href="javascript:;" data-tw-toggle="modal" data-tw-target="#delete-confirmation-modal"> <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i> Delete </a>
+                                                </form>
+                                            </li>
+                                        @endif
                                         @if($item->status == 'active')
                                             <li><a href="{{route('warehousein.edit',$item->id)}}" class="dropdown-item flex items-center mr-3" href="javascript:;"> <i data-lucide="check-square" class="w-4 h-4 mr-1"></i> Edit </a></li>
                                             <li> 
@@ -136,12 +162,13 @@
                                                 </form>
                                             </li>
                                             <li> 
-                                                <form action="{{route('warehousein.return')}}" method = "post">
+                                                <form action="{{route('warehousein.returndetail')}}" method = "get">
                                                 @csrf
                                                 <input type="hidden" name="id" value = "{{$item->id}}"/>
                                                 <a class="dropdown-item flex items-center text-danger dltReturn" data-id="{{$item->id}}" href="javascript:;" data-tw-toggle="modal" data-tw-target="#delete-confirmation-modal"> <i data-lucide="git-branch" class="w-4 h-4 mr-1"></i> Return </a>
                                                 </form>
                                             </li>
+
                                         @endif
                                     </ul>
                                 </div> 

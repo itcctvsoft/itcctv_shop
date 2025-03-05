@@ -87,7 +87,7 @@ class WarehousetomaintainController extends Controller
             'series'=>'string|nullable',
         ]);
         $data = $request->all();
-
+        \DB::beginTransaction();
         $n_count_series = 0;
         $pro_inventory = Inventory::where('product_id',$data['product_id'])->where('wh_id', $data['wh_id'])->first();
         if(!$pro_inventory || $pro_inventory->quantity < $data['quantity'] )
@@ -175,6 +175,7 @@ class WarehousetomaintainController extends Controller
             $data_seri['in_id'] = $wi_seri->id;
             \App\Models\MaintainSeries::create($data_seri);
             $detail_in = \App\Models\WarehouseInDetail::where('doc_id',$wi_seri->wi_id)
+            ->where('is_deleted',0)
                 ->where('product_id',$wi_seri->product_id)->first();
             $in_id = Inventory::updateWarehouseInDetails($data['product_id'], $data['wh_id'],$detail_in);
             array_push($in_ids, $in_id);
@@ -186,18 +187,24 @@ class WarehousetomaintainController extends Controller
             $product_detail['wo_id'] =  $wtm->id;
             $product_detail['product_id']= $data['product_id'];
             $product_detail['quantity'] = $data['quantity'];
-            $product_detail['price'] = $data['price'];
+            $product_detail['price'] = 0;
             $product_detail['in_ids'] = json_encode($in_ids);
             $product_detail['doc_type']='wm';
             $product_detail['wh_id']=$data['wh_id'];
             \App\Models\WarehouseoutDetail::c_create($product_detail);
+             //-----------------
+             $product_detail['doc_id'] =  $wtm->id;
+             $product_detail['operation'] =  -1;
+             \App\Models\InventoryDetail::create($product_detail);
+             //-------------------
             ///CAP NHAT WAREHOUSETOPROPERTIES
             $wtm->in_ids = json_encode($in_ids);
             $wtm->save();
             \App\Models\InvMaintainDetail::c_create($wtm,'wm',1,  $count_n>0?1:0); //1 la nhap
             ///create log /////////////
             $content = 'tạo phiếu chuyển kho sử dụng' ;
-            \App\Models\Log::insertLogNew($content,$wtm->id,'wtm',$user->id);
+            \App\Models\Log::insertLogNew($content,$wtm->id,'wm',$user->id);
+            \DB::commit();
             return redirect()->route('warehousetomaintain.index')->with('success','Tạo chuyển kho bảo hành thành công!');
         }
         else
@@ -275,6 +282,7 @@ class WarehousetomaintainController extends Controller
             'series'=>'string|nullable',
         ]);
         $data = $request->all();
+        \DB::beginTransaction();
         $inventory = \App\Models\Inventory::where('product_id',$data['product_id'])
             ->where('wh_id',$data['wh_id'])->first();
         $pinventory = \App\Models\InventoryMaintenance::where('product_id',$data['product_id'])
@@ -296,13 +304,13 @@ class WarehousetomaintainController extends Controller
     
     //    check new series
     //update old series in to 0
-        $wm_series = \App\Models\MaintainSeries::where('wm_id',$wtp->id)->where('is_sold',1)->get();
+        $wm_series = \App\Models\MaintainSeries::where('wm_id',$wtp->id)->where('doc_type','wm')->where('is_sold',1)->get();
         if (count($wm_series) > 0)
         {
             return back()->with('error','đã có sản phẩm được xuất khỏi kho nên không thể cập nhật!');
         }
         //cap nhat cac warehousein xuat qua properties nhu chua xuat de kiem tra thong tin moi
-        $wm_series = \App\Models\MaintainSeries::where('wm_id',$wtp->id)->where('is_sold',0)->get();
+    
         foreach($wm_series as $wm_seri)
         {
             $query = 'update warehousein_detail_series set is_sold = 0 where id = '.$wm_seri->in_id ;
@@ -354,7 +362,7 @@ class WarehousetomaintainController extends Controller
 
     
         ////update each seri in to 0 mean not transfer to properties to delete old seri in property
-        $wm_series = \App\Models\MaintainSeries::where('wm_id',$wtp->id)->get();
+        $wm_series = \App\Models\MaintainSeries::where('wm_id',$wtp->id)->where('doc_type','wm')->get();
         foreach($wm_series as $wo_seri)
         {
             $query = 'update warehousein_detail_series set is_sold = 0 where id = '.$wo_seri->in_id ;
@@ -397,6 +405,7 @@ class WarehousetomaintainController extends Controller
         
 
             $detail_in = \App\Models\WarehouseInDetail::where('doc_id',$wi_seri->wi_id)
+            ->where('is_deleted',0)
                 ->where('product_id',$wi_seri->product_id)->first();
             $in_id = Inventory::updateWarehouseInDetails($data['product_id'], $data['wh_id'],$detail_in);
             array_push($in_ids, $in_id);
@@ -408,12 +417,16 @@ class WarehousetomaintainController extends Controller
             $product_detail['wo_id'] =  $wtp->id;
             $product_detail['product_id']= $data['product_id'];
             $product_detail['quantity'] = $data['quantity'];
-            $product_detail['price'] = $data['price'];
+            $product_detail['price'] = 0;
             $product_detail['in_ids'] = json_encode($in_ids);
             $product_detail['doc_type']='wm';
             $product_detail['wh_id']=$data['wh_id'];
             \App\Models\WarehouseoutDetail::c_create($product_detail);
-
+            //-----------------
+            $product_detail['doc_id'] =  $wtp->id;
+            $product_detail['operation'] =  -1;
+            \App\Models\InventoryDetail::create($product_detail);
+            //-------------------
             ////cap nhat warehousetoproperty
             $data['in_ids'] = json_encode($in_ids);
             $user = auth()->user();
@@ -424,6 +437,7 @@ class WarehousetomaintainController extends Controller
             ///create log /////////////
             $content = 'cập nhật phiếu chuyển kho sử dụng' ;
             \App\Models\Log::insertLogNew($content,$wtp->id,'wtp',$user->id);
+            \DB::commit();
             return redirect()->route('warehousetomaintain.index')->with('success','Tạo chuyển kho sử dụng thành công!');
     
         }
@@ -445,6 +459,7 @@ class WarehousetomaintainController extends Controller
             return redirect()->route('unauthorized');
         }
         //
+        \DB::beginTransaction();
         $wtp = Warehousetomaintain::find($id);
         if (\App\Models\InvMaintainDetail::check_sold($id,'wm'))
         {
@@ -454,9 +469,13 @@ class WarehousetomaintainController extends Controller
         {
            
             ////capnhat lai warehouse series chua xuat
-            $wm_series = \App\Models\MaintainSeries::where('wm_id',$wtp->id)->get();
+            $wm_series = \App\Models\MaintainSeries::where('wm_id',$wtp->id)->where('doc_type','wm')->get();
             foreach($wm_series as $wo_seri)
             {
+                // $wo_seri->seri = trim( $wo_seri->seri ); //tim danh sách hàng có số seri và chưa bán, nếu không có thì ko thể xuất
+                // if(  $wo_seri->seri  == '')
+                //     continue;
+                // dd($wo_seri);
                 $query = 'update warehousein_detail_series set is_sold = 0 where id = '.$wo_seri->in_id ;
                 \DB::select($query);
             }
@@ -467,7 +486,7 @@ class WarehousetomaintainController extends Controller
             // \DB::select("update from warehouseout_details set wo_id = 0 where doc_type='wm' and wo_id = ".$wtp->id);
             $detail_outs = \App\Models\WarehouseoutDetail::where('doc_type','wm')->where('wo_id',$wtp->id)->get();
             \App\Models\WarehouseoutDetail::deleteWO($detail_outs ,'wm');
-            \App\Models\Inventory::deleteWarehouseToMaintain($wtp);
+            \App\Models\Inventory::deleteWarehouseToMaintain($detail_outs);
             //xoa detail in của properties
             \App\Models\InvMaintainDetail::remove($wtp->id,'wm');
             
@@ -476,6 +495,7 @@ class WarehousetomaintainController extends Controller
             $content = 'xóa phiếu chuyển kho sử dụng' ;
             \App\Models\Log::insertLogNew($content,$wtp->id,'wtp',$user->id);
             $wtp->delete();
+            \DB::commit();
             return redirect()->route('warehousetomaintain.index')->with('success','Xóa chuyển kho sử dụng thành công!');
     
         }

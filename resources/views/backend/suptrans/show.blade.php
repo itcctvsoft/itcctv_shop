@@ -138,16 +138,26 @@
                   }
                   if($sp->doc_type=="wir")
                   {
-                      $str_route = route('warehousein.showold',$sp->doc_id);
+                      $str_route = route('warehousein.show',$sp->doc_id);
                       $wir = \App\Models\DIn::find($sp->doc_id);
-                      $loai = 'phiếu nhập cũ';
+                      $loai = 'phiếu trả nhập';
                   }
                   if($sp->doc_type=="wor")
                   {
-                      $str_route = route('warehouseout.showold',$sp->doc_id);
-                      $loai = 'phiếu xuất cũ';
+                      $str_route = route('warehouseout.show',$sp->doc_id);
+                      $loai = 'phiếu trả xuất';
                   }
-               
+                  if($sp->doc_type=="din")
+                  {
+                      $str_route = route('warehousein.showold',$sp->doc_id);
+                      $wir = \App\Models\DIn::find($sp->doc_id);
+                      $loai = 'huỷ';
+                  }
+                  if($sp->doc_type=="dout")
+                  {
+                      $str_route = route('warehouseout.showold',$sp->doc_id);
+                      $loai = 'huỷ';
+                  }
                 ?>
                 
                 <tr>

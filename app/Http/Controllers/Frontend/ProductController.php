@@ -17,8 +17,15 @@ class ProductController extends Controller
        
             
         $product = \App\Models\Product::where('slug',$slug)->where('status','active')->first();
+        // $products = \DB::select('select a.*, b.old_price from (select * from products where slug = '.$slug.' and status = "active") as a left join productextends b on a.id = b.product_id  ') ;
+         $productData = DB::table('products')
+            ->leftjoin('productextends', 'products.id', '=', 'productextends.product_id')
+            ->where('products.slug', $slug)  ->where('products.status','active')
+            ->select('products.*', 'productextends.*')
+            ->first();
+            // dd($productData);
             ///breadcrumb info
-        if ($product)
+        if (isset($product) && $product)
         {   
             $cat = \App\Models\Category::where('id',$product->cat_id)->where('status','active')->first();
             $data['pagetitle']=" Sản phẩm " ;
@@ -35,16 +42,16 @@ class ProductController extends Controller
             $link->title=$product->title;
             $link->url='#';
             array_push($data['links'],$link);
-
+            $data['productdata'] = $productData;
             $data['product'] = $product;
             if(!$product)
             {
-                return view($this->front_view.'.404',$data);
+                  return view($this->front_view.'.404',$data);
             }
             $data['page_up_title'] = $product->title;
             $product->hit = $product->hit  + 1;
             $product->save();
-            $sql_tag_blog = "select c.* from (select * from tag_products where product_id = ".$data['product']->id.") as b left join tags as c on b.tag_id = c.id where c.status = 'active'";
+            $sql_tag_blog = "select c.* from (select * from tag_products where product_id = ".$product->id.") as b left join tags as c on b.tag_id = c.id where c.status = 'active'";
             $data['tags'] = DB::select($sql_tag_blog) ;
 
             $data['keyword'] = "";

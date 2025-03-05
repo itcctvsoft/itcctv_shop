@@ -31,7 +31,7 @@ class ProfileController extends  Controller
         $data['pagebreadcrumb'] .='  </ol> </nav>';
         ///
         $data['profile'] = $user ;
-        $sql_total_order = "select count(id) as total from orders where customer_id = ".$user->id." and status = 'active'   ";
+        $sql_total_order = "select count(id) as total from warehouseouts where customer_id = ".$user->id." and status = 'active'   ";
         $data['totalorder']  = DB::select($sql_total_order)[0]->total ;
         $sql_total_preorder = "select count(id) as total from orders where customer_id = ".$user->id."  and status='pending'  ";
         $data['totalpendorder']  = DB::select($sql_total_preorder)[0]->total ;
@@ -68,7 +68,7 @@ class ProfileController extends  Controller
           ///
         $user  = auth()->user();
         $data['profile'] = $user ;
-        $sql_total_order = "select count(id) as total from orders where customer_id = ".$user->id." and status = 'active'   ";
+        $sql_total_order = "select count(id) as total from warehouseouts where customer_id = ".$user->id." and status = 'active'   ";
         $data['totalorder']  = DB::select($sql_total_order)[0]->total ;
         $sql_total_preorder = "select count(id) as total from orders where customer_id = ".$user->id."  and status='pending'  ";
         $data['totalpendorder']  = DB::select($sql_total_preorder)[0]->total ;
@@ -95,7 +95,7 @@ class ProfileController extends  Controller
           ///
         $user  = auth()->user();
         $data['profile'] = $user ;
-        $sql_total_order = "select count(id) as total from orders where customer_id = ".$user->id." and status = 'active'   ";
+        $sql_total_order = "select count(id) as total from warehouseouts where customer_id = ".$user->id." and status = 'active'   ";
         $data['totalorder']  = DB::select($sql_total_order)[0]->total ;
         $sql_total_preorder = "select count(id) as total from orders where customer_id = ".$user->id."  and status='pending'  ";
         $data['totalpendorder']  = DB::select($sql_total_preorder)[0]->total ;
@@ -144,7 +144,7 @@ class ProfileController extends  Controller
          array_push($data['links'],$link);
          ///
         $data['profile'] = $user ;
-        $sql_total_order = "select count(id) as total from orders where customer_id = ".$user->id." and status = 'active'   ";
+        $sql_total_order = "select count(id) as total from warehouseouts where customer_id = ".$user->id." and status = 'active'   ";
         $data['totalorder']  = DB::select($sql_total_order)[0]->total ;
         $sql_total_preorder = "select count(id) as total from orders where customer_id = ".$user->id."  and status='pending'  ";
         $data['totalpendorder']  = DB::select($sql_total_preorder)[0]->total ;
@@ -205,13 +205,83 @@ class ProfileController extends  Controller
         $default_setting->save();
         return response()->json([ 'status'=>true,'msg'=>'Cập nhật thành công!']);
     }
+    public function updateAddress(Request $request,$updateId)
+    {
+
+        $this->validate($request,[
+            'full_name'=>'string|required',
+            'phone'=>'string|required',
+            'address'=>'string|required',
+             
+        ]);
+        
+        $data = $request->all();
+        $user = auth()->user();
+        $data['user_id'] = $user->id;
+        $address = \App\Models\AddressBook::find($updateId);
+        if($address)
+        {
+            $address->fill($data)->save();
+            return   response()->json([ 'success'=>true,'msg'=>'Cập nhật thành công!']);
+        }
+        else
+        {
+            return   response()->json([ 'success'=>false,'msg'=>'Cập nhật thất bại!']);
+        }
+       
+    }
+    public function saveAddress(Request $request)
+    {
+        $this->validate($request,[
+            'full_name'=>'string|required',
+            'phone'=>'string|required',
+            'address'=>'string|required',
+             
+        ]);
+        
+        $data = $request->all();
+        $user = auth()->user();
+        $data['user_id'] = $user->id;
+        $address = \App\Models\AddressBook::create($data);
+        return back()->with('success','Đã thêm thành công!');
+    }
+    public function deleteAddressAjax($id)
+    {
+        $user = auth()->user();
+        if (!$user)
+        {
+            return  response()->json([ 'success'=>false,'msg'=>'Chưa đăng nhập!']);
+        }
+        $address = \App\Models\AddressBook::find($id);
+        if(!$address || $address->user_id != $user->id)
+        {
+            return response()->json([ 'success'=>false,'msg'=>'Không tìm thấy dữ liệu hoặc không có quyền xóa!']);
+        }
+        $default_setting   = \App\Models\UserSetting::where('user_id',$user->id)->first();
+        if($default_setting->ship_id == $id)
+        {
+                $default_setting->ship_id= null;
+        }
+        if($default_setting->invoice_id == $id)
+        {
+            $default_setting->invoice_id= null;
+        }
+        $default_setting->save();
+        $address->delete();
+        return response()->json([ 'success'=>true,'msg'=>'Xóa thành công!']);
+    }
+
     public function deleteAddress($id)
     {
         $user = auth()->user();
-        $address = \App\Models\AddressBook::find($id);
-        if(!$address)
+        if (!$user)
         {
-            return response()->json([ 'status'=>false,'msg'=>'Không tìm thấy dữ liệu']);
+            return back()->with('error', "Chưa đăng nhập!");
+        }
+        $address = \App\Models\AddressBook::find($id);
+        if(!$address || $address->user_id != $user->id)
+        {
+            return back()->with('error', "Không có quyền xóa!");
         }
         $default_setting   = \App\Models\UserSetting::where('user_id',$user->id)->first();
         if($default_setting->ship_id == $id)

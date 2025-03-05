@@ -103,7 +103,7 @@
                                         <ul class="dropdown-content">
                                         <li><a class="dropdown-item" href="{{route('product.priceview',$item->id)}}" class="flex items-center mr-3" href="javascript:;"> <i data-lucide="credit-card" class="w-4 h-4 mr-1"></i> Thiết lập giá</a></li>
                                         <li><a class="dropdown-item" href="{{route('product.edit',$item->id)}}" class="flex items-center mr-3" href="javascript:;"> <i data-lucide="check-square" class="w-4 h-4 mr-1"></i> Edit </a></li>
-                                        <li><a class="dropdown-item"  class="flex items-center mr-3" > <i data-lucide="check-square" class="w-4 h-4 mr-1"></i>nhập xuất kho</a></li>
+                                        <li><a class="dropdown-item" href="{{route('inventory.viewproduct',$item->id)}}" class="flex items-center mr-3" > <i data-lucide="check-square" class="w-4 h-4 mr-1"></i>nhập xuất kho</a></li>
                                       
                                         
                                         <li>

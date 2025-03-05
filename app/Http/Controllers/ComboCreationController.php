@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
+use App\Models\InventoryDetail;
 class ComboCreationController extends Controller
 {
     /**
@@ -80,7 +80,7 @@ class ComboCreationController extends Controller
             // return $data;
             $user = auth()->user();
             $data['user_id'] = $user->id; 
-            
+            \DB::beginTransaction();
             
             // return $data;
             ///check product inventory//////
@@ -211,6 +211,7 @@ class ComboCreationController extends Controller
                     $data_seri['doc_type'] = 'co';
                     \App\Models\WarehouseoutDetailSeries::create($data_seri);
                     $detail_in = \App\Models\WarehouseInDetail::where('doc_id',$wi_seri->wi_id)
+                        ->where('is_deleted',0)
                         ->where('product_id',$wi_seri->product_id)->first();
                     $in_id = \App\Models\Inventory::updateWarehouseInDetails($product_detail['product_id'], $data['wh_id'],$detail_in);
                     array_push($in_ids, $in_id);
@@ -218,10 +219,16 @@ class ComboCreationController extends Controller
                 $product_detail['in_ids'] = json_encode($in_ids);
                 $product_detail['doc_type']='co'; //loai xuat la phieu xuat ban hang
                 \App\Models\WarehouseoutDetail::c_create($product_detail);
-                \Log::info('insert product detail.');
-                \Log::info( $product_detail['product_id']);
-                \Log::info( $product_detail['quantity'] );
-                \Log::info( $product_detail['price'] );
+                //---------
+                $product_detail['operation'] = '-1';
+                $product_detail['doc_id'] = $combo->id;
+                InventoryDetail::create($product_detail);
+                ///-------------------
+
+                // \Log::info('insert product detail.');
+                // \Log::info( $product_detail['product_id']);
+                // \Log::info( $product_detail['quantity'] );
+                // \Log::info( $product_detail['price'] );
             }
             ///nhap kho cho sản pham combo voi so luong combo->quantity va don gia combo->price
             $product_detail['doc_id'] = $combo->id;
@@ -249,6 +256,11 @@ class ComboCreationController extends Controller
             $product_detail['is_seri'] =  0;
             //  return $product_detail;
             \App\Models\WarehouseInDetail::create($product_detail);
+            //---------
+            $product_detail['operation'] = '1';
+            $product_detail['doc_id'] = $combo->id;
+            InventoryDetail::create($product_detail);
+            ///-------------------
             //cập nhật giá bán thông thường cho sản phẩm tạo combo
             $product = \App\Models\Product::find($combo->product_id);
             $product->price = $request->sold_price;
@@ -258,6 +270,8 @@ class ComboCreationController extends Controller
             \App\Models\Inventory::addProduct($product_detail['product_id'], $data['wh_id'],$product_detail['quantity'], $product_detail['price'] ,0);
             $content = 'thêm combo sản phẩm' ;
             \App\Models\Log::insertLogNew($content,$combo->id,'co',$user->id);
+            \DB::commit();
+
             return response()->json(['combo'=> $combo,'msg'=>'Thêm combo thành công!','status'=>true]);
         }
         catch (\Exception $e) {
@@ -280,7 +294,7 @@ class ComboCreationController extends Controller
         ->select ('warehouseout_details.price','warehouseout_details.product_id','warehouseout_details.quantity', 
         'p.title','p.photo','p.id','p.type','np.quantity as stock_qty'
         )
-        ->where('wo_id',$request->combo_id)->where('doc_type','co')
+        ->where('wo_id',$request->combo_id)->where('doc_type','co')->where('is_deleted','0')
         ->leftJoin(\DB::raw($query),'warehouseout_details.product_id','=','p.id')
         ->leftJoin(\DB::raw($query1),'warehouseout_details.product_id','=','np.product_id')
          ->get();
@@ -345,7 +359,7 @@ class ComboCreationController extends Controller
             <li class="breadcrumb-item active" aria-current="page"> Xem chi tiết</li>';
             if($combo)
             {
-                $co_details = \App\Models\WarehouseoutDetail::where('wo_id',$id)->where('doc_type','co')->get();
+                $co_details = \App\Models\WarehouseoutDetail::where('wo_id',$id)->where('doc_type','co')->where('is_deleted',0)->get();
                 foreach($co_details as $wi_detail)
                 {
                     $series = "";
@@ -422,7 +436,7 @@ class ComboCreationController extends Controller
     {
         //
         try{
-
+            \DB::beginTransaction();
       
             $func = "combo_list";
             if(!$this->check_function($func))
@@ -453,7 +467,7 @@ class ComboCreationController extends Controller
                     ////delete old series
             
                 //lay chi tiet xuat kho cu de kiem tra cung ton kho va so xuat kho moi
-                $wo_detail = \App\Models\WarehouseoutDetail::where('wo_id',$oldcombo->id)->where('doc_type','co')
+                $wo_detail = \App\Models\WarehouseoutDetail::where('wo_id',$oldcombo->id)->where('doc_type','co')->where('is_deleted',0)
                 ->where('product_id',$detail['id'])->first();
                 if (!$wo_detail)
                     continue;
@@ -467,6 +481,7 @@ class ComboCreationController extends Controller
             
                 ////cap nhat seri trong warehousein nhu chua xuat de kiem tra thong tin moi
                 $wo_series = \App\Models\WarehouseoutDetailSeries::where('wo_id',$oldcombo->id)->where('doc_type','co')->get();
+                $count_sericu = count($wo_series);
                 foreach($wo_series as $wo_seri)
                 {
                         $query = 'update warehousein_detail_series set is_sold = 0 where id = '.$wo_seri->in_id.' and product_id = '.$wo_seri->product_id;
@@ -492,64 +507,55 @@ class ComboCreationController extends Controller
                 }
                 foreach ($series as $seri)
                 {
-                        $seri = trim($seri);
-                        if ($seri == '')
-                        continue;
-                        $query ='select * from warehousein_detail_series where seri ="'.$seri.'" and is_sold = 0 and product_id ='.$detail['id'];
-                        $rows = \DB::select($query);
-                        if(count($rows) == 0)
+                    $seri = trim($seri);
+                    if ($seri == '')
+                    continue;
+                    $query ='select * from warehousein_detail_series where seri ="'.$seri.'" and is_sold = 0 and product_id ='.$detail['id'];
+                    $rows = \DB::select($query);
+                    if(count($rows) == 0)
+                    {
+                        foreach($wo_series as $wo_seri) //neu co loi thi cap nhat da xuat lại nhu cũ và trả về
                         {
-                            foreach($wo_series as $wo_seri) //neu co loi thi cap nhat da xuat lại nhu cũ và trả về
-                            {
-                                    $query = 'update warehousein_detail_series set is_sold = 1 where id = '.$wo_seri->in_id.' and product_id = '.$wo_seri->product_id;
-                                    \DB::select($query);
-                            }
-                            return response()->json(['msg'=>'seri không có trong kho!','status'=>false]);
-        
+                                $query = 'update warehousein_detail_series set is_sold = 1 where id = '.$wo_seri->in_id.' and product_id = '.$wo_seri->product_id;
+                                \DB::select($query);
                         }
-                            
+                        return response()->json(['msg'=>'seri không có trong kho!','status'=>false]);
+                    }
                 } 
                 //so hang khong co seri ton kho
-                $n_noseri = $pro_inventory->quantity - $counts_n + $wo_detail->quantity;
+                // \Log::info('$pro_inventory->quantity:'.$pro_inventory->quantity);
+                // \Log::info('$wo_detail->quantity:'.$wo_detail->quantity);
+                // \Log::info('$counts_n:'.$counts_n);
+                // \Log::info('$count_sericu:'.$count_sericu);
+                $n_noseri = $pro_inventory->quantity + $wo_detail->quantity - $counts_n  ;
+                // \Log::info('$n_noseri:'.$n_noseri);
                 //so hang khong co seri xuat kho
                 $sold_noseri =$detail['quantity'] - $count_n;
+                // \Log::info('$sold_noseri:'.$sold_noseri);
                 if($sold_noseri > $n_noseri) //neu so hang ban ko seri > so hàng tonkho thi false
                 {
                     return response()->json(['msg'=>'Số hàng xuất không seri lớn hơn số hàng không seri trong kho!','status'=>false]);
-        
                 }
-
             }
-        
-            $detailpros = \App\Models\WarehouseoutDetail::where('wo_id',$data['id'])->where('doc_type','co')->get();
-        
-            
-
+            $detailpros = \App\Models\WarehouseoutDetail::where('wo_id',$data['id'])->where('doc_type','co')->where('is_deleted',0)->get();
             //delete all old product detail
-            
             foreach($detailpros as $dtpro)
             {
                 \App\Models\WarehouseoutDetail::deleteDetailPro ($dtpro,0,$oldcombo->wh_id);
             }
-        
-        
-            
             ////delete old series
-        ////add series for each product
-        $wo_series = \App\Models\WarehouseoutDetailSeries::where('wo_id',$oldcombo->id)->where('doc_type','co')->get();
-        foreach($wo_series as $wo_seri)
-        {
-                $query = 'update warehousein_detail_series set is_sold = 0 where id = '.$wo_seri->in_id.' and product_id = '.$wo_seri->product_id;
-                \DB::select($query);
-        }
-        $sql = "delete from warehouseout_detail_series where  doc_type='co' and wo_id=". $oldcombo->id;
-        \DB::select($sql);
-        
+            ////add series for each product
+            $wo_series = \App\Models\WarehouseoutDetailSeries::where('wo_id',$oldcombo->id)->where('doc_type','co')->get();
+            foreach($wo_series as $wo_seri)
+            {
+                    $query = 'update warehousein_detail_series set is_sold = 0 where id = '.$wo_seri->in_id.' and product_id = '.$wo_seri->product_id;
+                    \DB::select($query);
+            }
+            $sql = "delete from warehouseout_detail_series where  doc_type='co' and wo_id=". $oldcombo->id;
+            \DB::select($sql);
             ///save product detail ////////////
             ////average price///////////////////
             // return $data;
-            
-
             $details = $request->products;
             $count_item = 0;
             foreach ($details as $detail)
@@ -560,9 +566,11 @@ class ComboCreationController extends Controller
             $data['cost_extra'] =0 ;
             $cost_extra = 0;
             ///update sysaccount
-        //xoa so lượng sản phẩm nhập combo trước đó
-        $dtpro = \App\Models\WarehouseInDetail::where('doc_type','co')->where('doc_id',$oldcombo->id)->where('product_id',$oldcombo->product_id)->first();
-        \App\Models\WarehouseInDetail::deleteDetailPro ($dtpro,0,$oldcombo->wh_id);
+            //xoa so lượng sản phẩm nhập combo trước đó
+            $dtpro = \App\Models\WarehouseInDetail::where('doc_type','co')->where('doc_id',$oldcombo->id)
+                ->where('product_id',$oldcombo->product_id)
+                ->where('is_deleted',0)->first();
+            \App\Models\WarehouseInDetail::deleteDetailPro ($dtpro,0,$oldcombo->wh_id);
 
             $oldcombo->fill($data)->save();
 
@@ -593,48 +601,54 @@ class ComboCreationController extends Controller
                     $product_detail['expired_at'] = $end_date;
                 }
                 $in_ids=array();
-            ////update series for each product
-            $series =  explode(",",  $detail['seri']);
-            $count_n =0;
-            if($detail['seri']!= '')
-            {
-                $count_n =count($series );
-            }
-            $counts_n = \DB::select ("select count(id) as tong from warehousein_detail_series where product_id = ".$detail['id'].' and is_sold = 0'); 
-            $counts_n = $counts_n[0]->tong;
-            //so hang khong co seri ton kho
-            $n_noseri = $pro_inventory->quantity - $counts_n ;
-            //so hang khong co seri xuat kho
-            $sold_noseri =$detail['quantity'] - $count_n;
-            //giam so luong ton kho
-            \App\Models\Inventory::subProductInv($product_detail['product_id'], $data['wh_id'], $detail['quantity'], $product_detail['price'], $cost_extra);
-            //tim detail in voi san pham ko seri
-            $in_ids = \App\Models\Inventory::updateWarehouseLastIn($product_detail['product_id'], $data['wh_id'],$sold_noseri);
-            
-            foreach ($series as $seri)
-            {
-                $seri = trim ($seri);
-                if ($seri == '')
-                        continue;
-                $wi_seri = \App\Models\WarehouseinDetailSeries::where('seri',$seri)
-                    ->where('product_id',$detail['id'])->where('is_sold',0)->first();
-                $wi_seri->is_sold = 1;
-                $wi_seri->save();
-                $data_seri['wo_id'] = $oldcombo->id;
-                $data_seri['seri'] = $seri;
-                $data_seri['product_id'] = $detail['id'];
-                $data_seri['in_id'] = $wi_seri->id;
-                $data_seri['doc_type'] = 'co';
-                \App\Models\WarehouseoutDetailSeries::create($data_seri);
-                    //tim detailin cho seri
-                    $detail_in = \App\Models\WarehouseInDetail::where('doc_id',$wi_seri->wi_id)
-                    ->where('product_id',$wi_seri->product_id)->first();
-                    $in_id =  \App\Models\Inventory::updateWarehouseInDetails($product_detail['product_id'], $data['wh_id'],$detail_in);
-                    array_push($in_ids, $in_id);
-            }
-            $product_detail['in_ids'] = json_encode($in_ids);
-            $product_detail['doc_type']='co'; //loai xuat la phieu xuat ban hang
-            \App\Models\WarehouseoutDetail::c_create($product_detail);
+                ////update series for each product
+                $series =  explode(",",  $detail['seri']);
+                $count_n =0;
+                if($detail['seri']!= '')
+                {
+                    $count_n =count($series );
+                }
+                $counts_n = \DB::select ("select count(id) as tong from warehousein_detail_series where product_id = ".$detail['id'].' and is_sold = 0'); 
+                $counts_n = $counts_n[0]->tong;
+                //so hang khong co seri ton kho
+                $n_noseri = $pro_inventory->quantity - $counts_n ;
+                //so hang khong co seri xuat kho
+                $sold_noseri =$detail['quantity'] - $count_n;
+                //giam so luong ton kho
+                \App\Models\Inventory::subProductInv($product_detail['product_id'], $data['wh_id'], $detail['quantity'], $product_detail['price'], $cost_extra);
+                //tim detail in voi san pham ko seri
+                $in_ids = \App\Models\Inventory::updateWarehouseLastIn($product_detail['product_id'], $data['wh_id'],$sold_noseri);
+                
+                foreach ($series as $seri)
+                {
+                    $seri = trim ($seri);
+                    if ($seri == '')
+                            continue;
+                    $wi_seri = \App\Models\WarehouseinDetailSeries::where('seri',$seri)
+                        ->where('product_id',$detail['id'])->where('is_sold',0)->first();
+                    $wi_seri->is_sold = 1;
+                    $wi_seri->save();
+                    $data_seri['wo_id'] = $oldcombo->id;
+                    $data_seri['seri'] = $seri;
+                    $data_seri['product_id'] = $detail['id'];
+                    $data_seri['in_id'] = $wi_seri->id;
+                    $data_seri['doc_type'] = 'co';
+                    \App\Models\WarehouseoutDetailSeries::create($data_seri);
+                        //tim detailin cho seri
+                        $detail_in = \App\Models\WarehouseInDetail::where('doc_id',$wi_seri->wi_id)
+                        ->where('is_deleted',0)
+                        ->where('product_id',$wi_seri->product_id)->first();
+                        $in_id =  \App\Models\Inventory::updateWarehouseInDetails($product_detail['product_id'], $data['wh_id'],$detail_in);
+                        array_push($in_ids, $in_id);
+                }
+                $product_detail['in_ids'] = json_encode($in_ids);
+                $product_detail['doc_type']='co'; //loai xuat la phieu xuat ban hang
+                \App\Models\WarehouseoutDetail::c_create($product_detail);
+                //---------
+                $product_detail['operation'] = '-1';
+                $product_detail['doc_id'] = $oldcombo->id;
+                InventoryDetail::create($product_detail);
+                ///-------------------
             }
             //
             ///nhap kho cho sản pham combo voi so luong combo->quantity va don gia combo->price
@@ -663,6 +677,11 @@ class ComboCreationController extends Controller
             $product_detail['is_seri'] =  0;
             //  return $product_detail;
             \App\Models\WarehouseInDetail::create($product_detail);
+            //---------
+            $product_detail['operation'] = '1';
+            $product_detail['doc_id'] = $oldcombo->id;
+            InventoryDetail::create($product_detail);
+            ///-------------------
             //increase stock
             \App\Models\Inventory::addProduct($product_detail['product_id'], $data['wh_id'],$product_detail['quantity'], $product_detail['price'] ,0);
         
@@ -675,6 +694,7 @@ class ComboCreationController extends Controller
             ///create log /////////////
             $content = 'cập nhật combo sản phẩm' ;
             \App\Models\Log::insertLogNew($content,$oldcombo->id,'co',$user->id);
+            \DB::commit();
             return response()->json(['msg'=>'Cập nhật đơn hàng thành công!','status'=>true]);
         }
         catch (\Exception $e) {
@@ -690,7 +710,7 @@ class ComboCreationController extends Controller
     {
         //
         $func = "combo_list";
-       
+       \DB::beginTransaction();
         $oldcombo = \App\Models\ComboCreation::find($id);
         // return $oldcombo;
         if(  $oldcombo==null  )
@@ -699,7 +719,7 @@ class ComboCreationController extends Controller
        
         //check detail product are exported
         $user = auth()->user();
-        $detailpros = \App\Models\WarehouseoutDetail::where('wo_id',$oldcombo->id)->where('doc_type','co')->get();
+        $detailpros = \App\Models\WarehouseoutDetail::where('wo_id',$oldcombo->id)->where('doc_type','co')->where('is_deleted',0)->get();
         //delete all old product detail
         foreach($detailpros as $dtpro)
         {
@@ -720,10 +740,16 @@ class ComboCreationController extends Controller
         $cost_extra = 0;
         ///update sysaccount
        //xoa so lượng sản phẩm nhập combo trước đó
-        $dtpro = \App\Models\WarehouseInDetail::where('doc_type','co')->where('doc_id',$oldcombo->id)->where('product_id',$oldcombo->product_id)->first();
+        $dtpro = \App\Models\WarehouseInDetail::where('doc_type','co')
+            ->where('doc_id',$oldcombo->id)
+            ->where('is_deleted',0)
+            ->where('product_id',$oldcombo->product_id)->first();
         \App\Models\WarehouseInDetail::deleteDetailPro ($dtpro,0,$oldcombo->wh_id);
         $oldcombo->is_deleted = 1;
         $oldcombo->save();
+        $content = 'xoá phiếu tạo combo' ;
+        \App\Models\Log::insertLogNew($content,$oldcombo->id,'co',$user->id);
+        \DB::commit();
         return redirect()->route('combocreation.index')->with('success','xóa thành công!');
 
     }

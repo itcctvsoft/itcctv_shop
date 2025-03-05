@@ -79,6 +79,23 @@
                             {{$setting->paymentinfo}}
                         </textarea>
                     </div>
+                    <div class="mt-3">
+                        <label for="regular-form-1" class="form-label">thời gian đăng ký</label>
+                        <input id="itcctv_pass" name="thoigiandk" type="text" value="{{$setting->thoigiandk}}" class="form-control" placeholder="hotline">
+                    </div>
+                    
+                    <div class="mt-3">
+                        <label for="regular-form-1" class="form-label">người liên hệ:</label>
+                        <input id="itcctv_pass" name="nguoilienhe" type="text" value="{{$setting->nguoilienhe}}" class="form-control" placeholder="hotline">
+                    </div>
+                    <div class="mt-3">
+                        
+                        <label for="" class="form-label">Logo chứng nhận bộ công thương</label>
+                       
+                        <textarea class="editor" name="logo_bct" id="editor2"  >
+                            {{$setting->logo_bct}}
+                        </textarea>
+                    </div>
                 </div>
             
             </div>

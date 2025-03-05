@@ -13,29 +13,49 @@ class WarehouseSeeder extends Seeder
     public function run(): void
     {
         //
-        
+        DB::table('warehouses')->insert([
+            [   
+               
+                'title'=>"cửa hàng",
+                'status'=>'active',
+
+            ],
+        ]);
+        DB::table('bankaccounts')->insert([
+            [   
+               
+                'title'=>"tiền mặt",
+                'total'=>0,
+                'status'=>'active',
+
+            ],
+        ]);
         DB::table('categories')->insert([
             [   
                 'id'=>0,
                 'title'=>"không xác định",
                 'slug'=>'khong_xac_dinh',
                 'status'=>'active',
-                'is_parent'=>0,
+                'is_parent'=>0
 
             ],
         ]);
         DB::table('setting_details')->insert([
             [   
                 'company_name'=>"Tên công ty",
-                'web_title'=>"Digorry",
                 'phone'=>'0500363732',
                 'address'=>'Ywang Buôn Ma Thuột, Đăk Lăk',
             ],
         ]);
-       
+        DB::table('freetrans_types')->insert([
+            [   
+                'title'=>"không xác định",
+                'status'=>'active',
+            ],
+        ]);
         DB::table('themesettings')->insert([
             [   
-                'title'=>"frontend_tp",
+                'title'=>"frontend",
             ],
         ]);
         DB::table('roles')->insert([

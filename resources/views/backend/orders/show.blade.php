@@ -62,7 +62,7 @@
                                     <div  >
                                         <div class="text-base text-slate-500">Kho xuất hàng</div>
                                         <div class="text-lg font-medium text-primary mt-2">
-                                       
+                                        {{\App\Models\Warehouse::where('id',$order->wh_id)->value('title')}}
                                         </div>
                                         <div class="mt-1">{{\App\Models\User::where('id',$order->vendor_id)->value('full_name')}}
 

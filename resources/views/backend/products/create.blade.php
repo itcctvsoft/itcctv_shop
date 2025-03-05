@@ -12,7 +12,28 @@
                                 margin:0.2rem;
                             }
 </style>
- 
+<style>
+        /* Basic styling for the loader */
+        #loader {
+            display: none; /* Initially hidden */
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            border: 16px solid #f3f3f3; /* Light grey */
+            border-top: 16px solid #3498db; /* Blue */
+            border-radius: 50%;
+            width: 120px;
+            height: 120px;
+            animation: spin 2s linear infinite;
+            z-index: 9999;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 <script src="{{asset('js/js/tom-select.complete.min.js')}}"></script>
 <link rel="stylesheet" href="{{ asset('/js/css/tom-select.min.css') }}">
 
@@ -20,6 +41,7 @@
 @section('content')
 
 <div class = 'content'>
+<div id="loader"></div>
 @include('backend.layouts.notification')
     <div class="intro-y flex items-center mt-8">
         <h2 class="text-lg font-medium mr-auto">
@@ -29,10 +51,42 @@
     <div class="grid grid-cols-12 gap-12 mt-5">
         <div class="intro-y col-span-12 lg:col-span-12">
             <!-- BEGIN: Form Layout -->
+            <div class="mt-3">
+                          <label> Tìm kiếm trên itcctv: </label>  <input type='text' id='product_search'/>
+                            
+                        <!-- <form action = "{{route('product.itcctv_jsearch')}}" method="post">
+                            <div class="mt-3">
+                                @if($errors->any())
+                                <div class="alert alert-danger">
+                                    <ul>
+                                            @foreach ($errors->all() as $error)
+                                                <li>    {{$error}} </li>
+                                            @endforeach
+                                    </ul>
+                                </div>
+                                @endif
+                            </div>
+                            @csrf
+                            <input name="searchdata" type = "text" />
+                            <button type="submit" class="btn" id="btn_itcctv_search" > Tìm sản phẩm trên itcctv </button> <br/>
+                        </form> -->
+                    </div>
             <form method="post" action="{{route('product.store')}}">
                 @csrf
+                <div class="mt-3">
+                        @if($errors->any())
+                        <div class="alert alert-danger">
+                            <ul>
+                                    @foreach ($errors->all() as $error)
+                                        <li>    {{$error}} </li>
+                                    @endforeach
+                            </ul>
+                        </div>
+                        @endif
+                    </div>
                 <div class="intro-y box p-5">
-                    <div>
+                   
+                    <div class="mt-3">
                         <label for="regular-form-1" class="form-label">Tiêu đề</label>
                         <input id="title" name="title" type="text" class="form-control" placeholder="">
                     </div>
@@ -51,7 +105,7 @@
                             
                         </div>
 
-                         
+                         <div id="div_anh"> </div>
                         <input type="hidden" id="photo" name="photo"/>
                     </div>
                     
@@ -141,17 +195,7 @@
                             </select>
                         </div>
                     </div>
-                    <div class="mt-3">
-                        @if($errors->any())
-                        <div class="alert alert-danger">
-                            <ul>
-                                    @foreach ($errors->all() as $error)
-                                        <li>    {{$error}} </li>
-                                    @endforeach
-                            </ul>
-                        </div>
-                        @endif
-                    </div>
+                   
                     <div class="text-right mt-5">
                         <button type="submit" class="btn btn-primary w-24">Lưu</button>
                     </div>
@@ -163,11 +207,21 @@
 @endsection
 
 @section ('scripts')
+<link href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css" rel="Stylesheet"> 
+<script src="{{asset('backend/assets/js/product_v3.js')}}"></script> 
+<script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js" ></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
  <script>
+    
+$(document).ready(function(){ //Your code here 
+   
+
     var select = new TomSelect('#select-junk',{
         maxItems: null,
         allowEmptyOption: true,
+        create: true, // Tạo mới các tag nếu không tồn tại
         plugins: ['remove_button'],
+       
         sortField: {
             field: "text",
             direction: "asc"
@@ -176,10 +230,11 @@
                 this.setTextboxValue('');
                 this.refreshOptions();
             },
-        create: true
         
     });
     select.clear();
+    // select.addItem('hha');
+});
 </script>
 <script>
  
@@ -241,6 +296,16 @@
 </script> -->
 <script src="{{asset('js/js/ckeditor.js')}}"></script>
 <script>
+        function showLoader() {
+            document.getElementById('loader').style.display = 'block';
+        }
+
+        function hideLoader() {
+            document.getElementById('loader').style.display = 'none';
+        }
+
+
+        var editor2;
         // CKSource.Editor
         ClassicEditor.create( document.querySelector( '#editor2' ), 
         {
@@ -249,13 +314,133 @@
                 },
                 mediaEmbed: {previewsInData: true}
         })
-        .then( editor => {
-            console.log( editor );
+        .then(editor => {
+            editor2 = editor;
+            console.log('editor2');
+            console.log(editor2);
         })
         .catch( error => {
             console.error( error );
         })
 
 </script>
-  
+<script>
+        $.ajaxSetup({
+    headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')}
+});
+     ////////////////////////////////////////////////
+    // /////////product search//////////////////////
+    ///////////////////////////////////////////////
+    var product_search = $('#product_search');
+    product_search.autocomplete({
+        source: function(request, response) {
+            // console.log("toi biet ma");
+            showLoader();
+            $.ajax({
+                type: 'GET',
+                url: '{{route('product.itcctv_jsearch_get')}}',
+                data: {
+                    searchdata: request.term,
+                },
+                success: function(data) {
+                    console.log(data);
+                    hideLoader();
+                    var p_products = JSON.parse(data.products);
+                    response( jQuery.map( p_products, function( item ) {
+                        var imageurls = item.photo.split(",");
+                    
+                        return {
+                        id: item.id,
+                        value: item.title,
+                        price: item.price,
+                        imgurl: imageurls[0],
+                        qty: 0,
+                        expired:0,
+                        }
+                    }));
+                }
+            });
+        },
+        response: function(event, ui) {
+        
+        },
+        select: function(event, ui) {
+            showLoader();
+            $.ajax({
+                type: 'GET',
+                url: '{{route('product.itcctv_productdetail')}}',
+                data: {
+                    id: ui.item.id,
+                },
+                success: function(data) {
+                    console.log(data);
+                    hideLoader();
+                    var product  = JSON.parse(data.product);
+                    $('#title').val(product.title);
+                    var textarea = document.getElementById('editor1');
+                    textarea.value = product.summary;
+                    product.description += "<p> Xem thêm chi tiết tại: <a href='https://itcctv.vn/product/view/"+product.slug+"'>"+ product.title+"</a></p>";
+                    editor2.data.set(product.description);
+                    $('#photo').val(product.photo);
+                    var imageurls = product.photo.split(",");
+                    $('#div_anh').html('<img src="'+imageurls[0]+'" style="max-width:100px"/>');
+                    $('#price_out').val(product.price);
+                    var tags = product.tag;
+                    // Thêm từng tag vào TomSelect
+                    // tags.forEach(tag => {
+                    //     select.addItem(tag); // Thêm tag
+                    // });
+                    
+                    // const tomSelectInstance = new TomSelect('#select-junk', {
+                    //     create: true, // Cho phép tạo tag mới nếu chưa tồn tại
+                    // });
+
+                    // // Mảng các tag cần thêm
+                 
+
+                    // // Thêm từng tag vào TomSelect
+                    // tags.forEach(tag => {
+                    //     // Kiểm tra nếu tag chưa tồn tại trong options, tạo mới tag
+                    //     if (!tomSelectInstance.options[tag]) {
+                    //         tomSelectInstance.addOption({value: tag, text: tag}); // Tạo option mới
+                    //     }
+                    //     tomSelectInstance.addItem(tag); // Thêm tag vào danh sách
+                    // });
+                    if (!document.querySelector('#select-junk').tomselect) {
+      // Khởi tạo TomSelect nếu chưa có
+                const tomSelectInstance = new TomSelect('#select-junk', {
+                        create: true, // Cho phép tạo tag mới nếu chưa tồn tại
+                    });
+                } else {
+                    // Lấy instance hiện tại của TomSelect
+                    var tomSelectInstance = document.querySelector('#select-junk').tomselect;
+                }
+
+                // Mảng các tag cần thêm
+                // const tags = ["JavaScript", "HTML", "CSS", "React"];
+
+                // Thêm từng tag vào TomSelect
+                tags.forEach(tag => {
+                    if (!tomSelectInstance.options[tag]) {
+                        tomSelectInstance.addOption({value: tag.title, text: tag.title}); // Tạo option mới
+                    }
+                    tomSelectInstance.addItem(tag.title); // Thêm tag vào danh sách
+                });
+                }
+            });
+        }
+    }).data('ui-autocomplete')._renderItem = function(ul, item){
+        $( ul ).addClass('dropdown-content overflow-y-auto h-52 ');
+        return $("<li class='mt-10 dropdown-item  '></li>")
+            .data("item.autocomplete", item )
+            // .append('<div  style="clear:both"><div style="  pointer-events: none; width:50; float:left; "><img width="50" height="50" src="'+item.imgurl+'"/></div> <div style="float:left"> <span style=" pointer-events: none;">'+item.value+' </span> <br/> <span>số lượng: '+ item.qty +'</span> &nbsp;&nbsp;&nbsp;&nbsp; <span> giá: '+  Intl.NumberFormat('en-US').format(item.price)+'</div></div>' )
+            .append('<table style=" border:none; background:none" > <tr><td><img class="rounded-full" width="50" height="50" src="'+item.imgurl
+            +'"/></td><td style=" text-align: left;"><span class="font-medium">'+ item.value 
+            +'</span><br/> <span class=" text-slate-500"> No:' + (item.qty==null?0:item.qty) 
+            +'</span>  <span class=" text-slate-500"> giá:' + (item.qty==null?0:item.qty)
+            +'</span> <span class=" text-slate-500"> bảo hành:' + (item.expired==null?'':item.expired)+'</span>'
+            +'</td></tr></table>')
+            .appendTo(ul);
+        };;
+</script>
 @endsection

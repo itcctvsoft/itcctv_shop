@@ -196,7 +196,7 @@
                                         </td>
                                         
                                         <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "  class="text-right  " colspan="2">
-                                            {{number_format($warehouseout->paid_amount, 0, '.', ',')}}
+                                            {{number_format($paid_amount, 0, '.', ',')}}
                                         </td>
                                     </tr>
                                     <tr>
@@ -209,6 +209,20 @@
                                             <br/>
                                         </td>
                                     </tr>
+                                    @if ($sum_return > 0)
+                                    <tr>
+                                        <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "  class="text-right text-danger" colspan="3">
+                                          Đã trả hàng:
+                                        </td>
+                                        
+                                        <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "  class="text-right text-danger " colspan="2">
+                                            {{number_format(($sum_return ), 0, '.', ',')}}
+                                            <br/>
+                                        </td>
+                                    </tr>
+                                    @endif
+
+
                                 </tfooter>
                             </table>
                           

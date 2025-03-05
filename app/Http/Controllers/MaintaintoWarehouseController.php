@@ -85,6 +85,7 @@ class MaintaintoWarehouseController extends Controller
             'time'=>'numeric|nullable',
         ]);
         $data = $request->all();
+        \DB::beginTransaction();
         $inventory = \App\Models\Inventory::where('product_id',$data['product_id'])
             ->where('wh_id',$data['wh_id'])->first();
         $minventory = \App\Models\InventoryMaintenance::where('product_id',$data['product_id'])
@@ -152,7 +153,7 @@ class MaintaintoWarehouseController extends Controller
             $product_detail['doc_id'] = $mtw->id;
             $product_detail['doc_type'] = 'mi';
             $product_detail['product_id'] = $data['product_id'];
-            $product_detail['price'] = $data['price'];
+            $product_detail['price'] = 0; //don gia nay anh huong den loi nhuan, vi khi gui qua price bang 0 nen gui ve bang 0, noi tai cac kho chuyen cho nhau nen khong tinh loi nhuan
             $product_detail['quantity'] = $data['quantity'];
             $product_detail['wh_id'] = $data['wh_id'];
 
@@ -179,6 +180,12 @@ class MaintaintoWarehouseController extends Controller
             }
             $product_detail['is_seri'] = $count_n> 0?1:0;
             WarehouseInDetail::create($product_detail);
+            //-----------------
+            $product_detail['doc_id'] =   $mtw->id;
+            $product_detail['operation'] =  1;
+            \App\Models\InventoryDetail::create($product_detail);
+            //---------------
+
             \App\Models\InventoryMaintenance::addMaintainToWarehouse($data['product_id'],$data['wh_id'],$data['quantity'],$data['price'] );
            
             //tao inv_maintain_detail out
@@ -214,6 +221,7 @@ class MaintaintoWarehouseController extends Controller
             ///create log /////////////
             $content = 'tạo phiếu chuyển kho bảo hành sang kho bán hàng' ;
             \App\Models\Log::insertLogNew($content,$mtw->id,'mtw',$user->id);
+            \DB::commit();
             return redirect()->route('maintaintowarehouse.index')->with('success','Tạo chuyển kho bán hàng thành công!');
      
         }
@@ -248,7 +256,9 @@ class MaintaintoWarehouseController extends Controller
 
       
          
-        $wi_details = \App\Models\WarehouseInDetail::where('doc_id',$mtw->id)->where('doc_type','mi')->get();
+        $wi_details = \App\Models\WarehouseInDetail::where('doc_id',$mtw->id)
+        ->where('is_deleted',0)
+        ->where('doc_type','mi')->get();
         foreach ($wi_details as $wi_detail)
         {
             if ($wi_detail->qty_sold > 0)
@@ -298,6 +308,7 @@ class MaintaintoWarehouseController extends Controller
             'time'=>'numeric|nullable',
         ]);
         $data = $request->all();
+        \DB::beginTransaction();
         // return $data;
         $mtw = MaintainToWarehouse::find($id);
         if(!$mtw)
@@ -371,7 +382,9 @@ class MaintaintoWarehouseController extends Controller
             return back()->with('error','Số lượng vượt quá tồn kho!');
         }
         
-        $wi_details = \App\Models\WarehouseInDetail::where('doc_id',$mtw->id)->where('doc_type','mi')->get();
+        $wi_details = \App\Models\WarehouseInDetail::where('doc_id',$mtw->id)
+        ->where('is_deleted',0)
+        ->where('doc_type','mi')->get();
         foreach ($wi_details as $wi_detail)
         {
             if ($wi_detail->qty_sold > 0)
@@ -398,7 +411,7 @@ class MaintaintoWarehouseController extends Controller
         $product_detail['doc_id'] = $mtw->id;
         $product_detail['doc_type'] = 'mi';
         $product_detail['product_id'] = $data['product_id'];
-        $product_detail['price'] = $data['price'];
+        $product_detail['price'] =  0;
         $product_detail['quantity'] = $data['quantity'];
         $product_detail['wh_id'] = $data['wh_id'];
         $inv = \App\Models\Inventory::where('product_id',$product_detail['product_id'])
@@ -423,6 +436,11 @@ class MaintaintoWarehouseController extends Controller
         }
         $product_detail['is_seri'] = $count_n> 0?1:0;
         $mtw_detail = WarehouseInDetail::create($product_detail)   ;
+        //-----------------
+        $product_detail['doc_id'] =   $mtw->id;
+        $product_detail['operation'] =  1;
+        \App\Models\InventoryDetail::create($product_detail);
+        //---------------
         //save maintaintowarehouse doc
         \App\Models\InventoryMaintenance::addMaintainToWarehouse($data['product_id'],$data['wh_id'],$data['quantity'],$data['price'] );
      
@@ -455,6 +473,7 @@ class MaintaintoWarehouseController extends Controller
 
         $content = 'cập nhật phiếu chuyển kho bán hàng' ;
         \App\Models\Log::insertLogNew($content,$mtw->id,'mtw',$user->id);
+        \DB::commit();
         return redirect()->route('maintaintowarehouse.index')->with('success','Cập nhật chuyển kho bán hàng thành công!');
     
     }
@@ -470,12 +489,15 @@ class MaintaintoWarehouseController extends Controller
             return redirect()->route('unauthorized');
         }
         //
+        \DB::beginTransaction();
         $mtw = MaintainToWarehouse::find($id);
         if(!$mtw)
             return back()->with('error','Không tìm thấy dữ liệu!');
        
         //tim het các warehouse in moi tao, kiem tra da xuat chua
-        $wi_details = \App\Models\WarehouseInDetail::where('doc_id',$mtw->id)->where('doc_type','mi')->get();
+        $wi_details = \App\Models\WarehouseInDetail::where('doc_id',$mtw->id)
+        ->where('is_deleted',0)
+        ->where('doc_type','mi')->get();
         foreach ($wi_details as $wi_detail)
         {
             if ($wi_detail->qty_sold > 0)
@@ -504,6 +526,7 @@ class MaintaintoWarehouseController extends Controller
         $content = 'xóa phiếu chuyển kho bảo hành đến bán hàng' ;
         \App\Models\Log::insertLogNew($content,$mtw->id,'mtw',$user->id);
         $mtw->delete();
+        \DB::commit();
         return redirect()->route('maintaintowarehouse.index')->with('success','Cập nhật chuyển kho bán hàng thành công!');
       
     }

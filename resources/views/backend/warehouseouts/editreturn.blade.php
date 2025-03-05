@@ -392,129 +392,129 @@ $("#paid_amount").keyup(function(){
     ////////////////////////////////////////////////
     // /////////product search//////////////////////
     ///////////////////////////////////////////////
-    var product_search = $('#product_search');
-    product_search.autocomplete({
-        source: function(request, response) {
-            // console.log("toi biet ma");
-            var warehouse_id = $('#warehouse_id').val();
-            var customer_id = $('#customer_id').val();
-            // var idnhom = $('#selectgroupid').val();
-            // console.log('warehouseid' + warehouse_id);
-            $.ajax({
-                type: 'GET',
-                url: '{{route('product.jsearchwo')}}',
-                data: {
-                    data: request.term,
-                    warehouse_id: warehouse_id,
-                    customer_id:customer_id,
+    // var product_search = $('#product_search');
+    // product_search.autocomplete({
+    //     source: function(request, response) {
+    //         // console.log("toi biet ma");
+    //         var warehouse_id = $('#warehouse_id').val();
+    //         var customer_id = $('#customer_id').val();
+    //         // var idnhom = $('#selectgroupid').val();
+    //         // console.log('warehouseid' + warehouse_id);
+    //         $.ajax({
+    //             type: 'GET',
+    //             url: '{{route('product.jsearchwo')}}',
+    //             data: {
+    //                 data: request.term,
+    //                 warehouse_id: warehouse_id,
+    //                 customer_id:customer_id,
                 
-                },
-                success: function(data) {
-                    console.log(data);
-                    response( jQuery.map( data.msg, function( item ) {
-                        var imageurls = item.photo.split(",");
+    //             },
+    //             success: function(data) {
+    //                 console.log(data);
+    //                 response( jQuery.map( data.msg, function( item ) {
+    //                     var imageurls = item.photo.split(",");
                     
-                        return {
-                        id: item.id,
-                        value: item.title,
-                        price: item.price,
-                        type:item.type,
-                        imgurl: imageurls[0],
-                        qty: item.quantity,
-                        expired:item.expired,
-                        }
-                    }));
-                }
-            });
-        },
-        response: function(event, ui) {
+    //                     return {
+    //                     id: item.id,
+    //                     value: item.title,
+    //                     price: item.price,
+    //                     type:item.type,
+    //                     imgurl: imageurls[0],
+    //                     qty: item.quantity,
+    //                     expired:item.expired,
+    //                     }
+    //                 }));
+    //             }
+    //         });
+    //     },
+    //     response: function(event, ui) {
         
-        },
-        select: function(event, ui) {
+    //     },
+    //     select: function(event, ui) {
 
-            $.ajax({
-                type: 'GET',
-                url: '{{route('product.groupprice')}}',
-                data: {
-                    product_id: ui.item.id,
-                },
-                success: function(data) {
-                    console.log(data);
-                    var listprices = data.msg;
-                    var plist=[];
-                    listprices.forEach((item) => {
-                        gprice = new Pricelist(item.id,item.title,item.price,item.gpid);
-                        plist.push(gprice);
-                    });
-                    const newProduct = 
-                    new Product(ui.item.id,ui.item.value, ui.item.price,ui.item.type, 1,ui.item.qty, ui.item.imgurl,'',data.series,plist);
-                    if(!addtoProductList(newProduct))
-                    {
-                        Swal.fire(
-                            'Không thực hiện!',
-                            'Sản phẩm đã có!',
-                            'error'
-                        );
-                    }
-                    updateListView();
-                }
-            });
-        }
-    }).data('ui-autocomplete')._renderItem = function(ul, item){
-        $( ul ).addClass('dropdown-content overflow-y-auto h-52 ');
-        return $("<li class='mt-10 dropdown-item  '></li>")
-            .data("item.autocomplete", item )
-            // .append('<div  style="clear:both"><div style="  pointer-events: none; width:50; float:left; "><img width="50" height="50" src="'+item.imgurl+'"/></div> <div style="float:left"> <span style=" pointer-events: none;">'+item.value+' </span> <br/> <span>số lượng: '+ item.qty +'</span> &nbsp;&nbsp;&nbsp;&nbsp; <span> giá: '+  Intl.NumberFormat('en-US').format(item.price)+'</div></div>' )
-            .append('<table style=" border:none; background:none" > <tr><td><img class="rounded-full" width="50" height="50" src="'+item.imgurl
-            +'"/></td><td style=" text-align: left;"><span class="font-medium">'+ item.value 
-            +'</span><br/> <span class=" text-slate-500"> No:' + (item.qty==null?0:item.qty) 
-            +'</span>  <span class=" text-slate-500"> giá:' + (item.price==null?0:item.price)
-            +'</span> <span class=" text-slate-500"> bảo hành:' + (item.expired==null?'':item.expired)+'</span>'
-            +'</td></tr></table>')
-            .appendTo(ul);
-        };;
+    //         $.ajax({
+    //             type: 'GET',
+    //             url: '{{route('product.groupprice')}}',
+    //             data: {
+    //                 product_id: ui.item.id,
+    //             },
+    //             success: function(data) {
+    //                 console.log(data);
+    //                 var listprices = data.msg;
+    //                 var plist=[];
+    //                 listprices.forEach((item) => {
+    //                     gprice = new Pricelist(item.id,item.title,item.price,item.gpid);
+    //                     plist.push(gprice);
+    //                 });
+    //                 const newProduct = 
+    //                 new Product(ui.item.id,ui.item.value, ui.item.price,ui.item.type, 1,ui.item.qty, ui.item.imgurl,'',data.series,plist);
+    //                 if(!addtoProductList(newProduct))
+    //                 {
+    //                     Swal.fire(
+    //                         'Không thực hiện!',
+    //                         'Sản phẩm đã có!',
+    //                         'error'
+    //                     );
+    //                 }
+    //                 updateListView();
+    //             }
+    //         });
+    //     }
+    // }).data('ui-autocomplete')._renderItem = function(ul, item){
+    //     $( ul ).addClass('dropdown-content overflow-y-auto h-52 ');
+    //     return $("<li class='mt-10 dropdown-item  '></li>")
+    //         .data("item.autocomplete", item )
+    //         // .append('<div  style="clear:both"><div style="  pointer-events: none; width:50; float:left; "><img width="50" height="50" src="'+item.imgurl+'"/></div> <div style="float:left"> <span style=" pointer-events: none;">'+item.value+' </span> <br/> <span>số lượng: '+ item.qty +'</span> &nbsp;&nbsp;&nbsp;&nbsp; <span> giá: '+  Intl.NumberFormat('en-US').format(item.price)+'</div></div>' )
+    //         .append('<table style=" border:none; background:none" > <tr><td><img class="rounded-full" width="50" height="50" src="'+item.imgurl
+    //         +'"/></td><td style=" text-align: left;"><span class="font-medium">'+ item.value 
+    //         +'</span><br/> <span class=" text-slate-500"> No:' + (item.qty==null?0:item.qty) 
+    //         +'</span>  <span class=" text-slate-500"> giá:' + (item.price==null?0:item.price)
+    //         +'</span> <span class=" text-slate-500"> bảo hành:' + (item.expired==null?'':item.expired)+'</span>'
+    //         +'</td></tr></table>')
+    //         .appendTo(ul);
+    //     };;
     //////////end product search /////////////////////////
   ////////////////////////////////////////////////
     // /////////customer search//////////////////////
     ///////////////////////////////////////////////
-    var product_search = $('#customer_search');
-    product_search.autocomplete({
-        source: function(request, response) {
-            $.ajax({
-                type: 'GET',
-                url: '{{route('customer.jsearch')}}',
-                data: {
-                    data: request.term,
-                },
-                success: function(data) {
-                    console.log(data);
-                    response( jQuery.map( data.msg, function( item ) {
-                        return {
-                        id: item.id,
-                        value: item.title,
+    // var product_search = $('#customer_search');
+    // product_search.autocomplete({
+    //     source: function(request, response) {
+    //         $.ajax({
+    //             type: 'GET',
+    //             url: '{{route('customer.jsearch')}}',
+    //             data: {
+    //                 data: request.term,
+    //             },
+    //             success: function(data) {
+    //                 console.log(data);
+    //                 response( jQuery.map( data.msg, function( item ) {
+    //                     return {
+    //                     id: item.id,
+    //                     value: item.title,
                        
-                        }
-                    }));
-                }
-            });
-        },
-        response: function(event, ui) {
+    //                     }
+    //                 }));
+    //             }
+    //         });
+    //     },
+    //     response: function(event, ui) {
         
-        },
-        select: function(event, ui) {
+    //     },
+    //     select: function(event, ui) {
 
-           $('#customer_id').val(ui.item.id);
+    //        $('#customer_id').val(ui.item.id);
            
-        }
-    }).data('ui-autocomplete')._renderItem = function(ul, item){
-        $( ul ).addClass('dropdown-content overflow-y-auto h-52 ');
-        return $("<li class='mt-10 dropdown-item  '></li>")
-            .data("item.autocomplete", item )
-            // .append('<div  style="clear:both"><div style="  pointer-events: none; width:50; float:left; "><img width="50" height="50" src="'+item.imgurl+'"/></div> <div style="float:left"> <span style=" pointer-events: none;">'+item.value+' </span> <br/> <span>số lượng: '+ item.qty +'</span> &nbsp;&nbsp;&nbsp;&nbsp; <span> giá: '+  Intl.NumberFormat('en-US').format(item.price)+'</div></div>' )
-            .append('<table style=" border:none; background:none" > <tr><td>'
-            +'<span   style="line-height:220%">'+ item.value +'</span></td></tr></table>')
-            .appendTo(ul);
-        };;
+    //     }
+    // }).data('ui-autocomplete')._renderItem = function(ul, item){
+    //     $( ul ).addClass('dropdown-content overflow-y-auto h-52 ');
+    //     return $("<li class='mt-10 dropdown-item  '></li>")
+    //         .data("item.autocomplete", item )
+    //         // .append('<div  style="clear:both"><div style="  pointer-events: none; width:50; float:left; "><img width="50" height="50" src="'+item.imgurl+'"/></div> <div style="float:left"> <span style=" pointer-events: none;">'+item.value+' </span> <br/> <span>số lượng: '+ item.qty +'</span> &nbsp;&nbsp;&nbsp;&nbsp; <span> giá: '+  Intl.NumberFormat('en-US').format(item.price)+'</div></div>' )
+    //         .append('<table style=" border:none; background:none" > <tr><td>'
+    //         +'<span   style="line-height:220%">'+ item.value +'</span></td></tr></table>')
+    //         .appendTo(ul);
+    //     };;
     //////////end product search /////////////////////////
 
 

@@ -27,7 +27,8 @@ return new class extends Migration
             $table->unsignedBigInteger('shiptrans_id')->nullable() ;
             $table->integer('cost_extra')->default(0) ;
             $table->string('status')->default('active');
-          
+            $table->string('returned_ids')->nullable();
+            
             $table->timestamps();
         });
     }

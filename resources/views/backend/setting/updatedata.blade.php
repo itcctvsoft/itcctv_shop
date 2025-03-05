@@ -44,10 +44,16 @@
         <button type="submit" class ="btn">Xem danh mục</button>
         </form>
     </div>
-    <div class="mt-3">
+    {{-- <div class="mt-3">
         <form action="{{route('setting.testapi')}}" method = "post">
          @csrf
         <button type="submit" class ="btn">Test api</button>
+        </form>
+    </div> --}}
+    <div class="mt-3">
+        <form action="{{route('setting.updateversion12')}}" method = "post">
+         @csrf
+        <button type="submit" class ="btn">Cập nhật phiên bản từ 1 lên 2</button>
         </form>
     </div>
 </div>

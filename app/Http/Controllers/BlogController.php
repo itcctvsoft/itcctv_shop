@@ -168,7 +168,8 @@ class BlogController extends Controller
             /// ------end replace --///
             $helpController = new \App\Http\Controllers\HelpController();
             $data['content'] = $helpController->uploadImageInContent( $data['content'] );
-            
+            //   $data['content'] = $helpController->removeImageStyle( $data['content'] );
+        
             // ------end replace --///
             if($request->photo_old == null)
             {
@@ -177,7 +178,9 @@ class BlogController extends Controller
               
             if($data['photo'] == null || $data['photo']=="")
                 $data['photo'] = $data['photo_old'] ;
-            
+            // else
+            //     $data['photo'] = $data['photo'].",". $data['photo_old']   ;
+
             if($data['photo'] == null || $data['photo']=="")
                 $data['photo'] = asset('backend/assets/dist/images/profile-6.jpg');
        

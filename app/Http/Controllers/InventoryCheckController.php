@@ -10,6 +10,7 @@ use App\Models\Warehouse;
 use App\Models\InventoryCheck;
 use App\Models\InventoryCheckDetail;
 use App\Models\WarehouseInDetail;
+use App\Models\InventoryDetail;
  
  
 use App\Models\User;
@@ -77,6 +78,7 @@ class InventoryCheckController extends Controller
             return redirect()->route('unauthorized');
         }
         //
+        \DB::beginTransaction();
         $data = $request->importDoc;
         // return $data;
         $user = auth()->user();
@@ -142,12 +144,12 @@ class InventoryCheckController extends Controller
               $product_detailin['wo_id'] =  $ic->id;
             //   $product_detailin['price'] = $data['price'];
             //   
-              $product_detailin['doc_id'] = $ic->id;
-              $product_detailin['doc_type'] = 'ci';
-              $product_detailin['product_id']= $detail['id'];
-              $product_detailin['quantity'] = $product_detail['error'];
-              $product_detailin['price'] = $product->price_avg;
-              $product_detailin['wh_id'] = $ic->wh_id;
+            $product_detailin['doc_id'] = $ic->id;
+            $product_detailin['doc_type'] = 'ci';
+            $product_detailin['product_id']= $detail['id'];
+            $product_detailin['quantity'] = $product_detail['error'];
+            $product_detailin['price'] = $product->price_avg;
+            $product_detailin['wh_id'] = $ic->wh_id;
               
             if( $detail['seri'] != '')
             {
@@ -183,7 +185,10 @@ class InventoryCheckController extends Controller
                     }
                     if($found == 0)
                     {
-                        $old_detail = \App\Models\WarehouseInDetail::where('doc_id',$old_seri_n->wi_id)->where('product_id',$old_seri_n->product_id)->where('doc_type',$old_seri_n->doc_type)->first();
+                        $old_detail = \App\Models\WarehouseInDetail::where('doc_id',$old_seri_n->wi_id)
+                        ->where('is_deleted',0)
+                        ->where('product_id',$old_seri_n->product_id)
+                        ->where('doc_type',$old_seri_n->doc_type)->first();
                         $old_detail->qty_sold += 1;
                         $old_detail->save();
                         ////
@@ -225,6 +230,11 @@ class InventoryCheckController extends Controller
                     $product_detailin['prebalance'] = 0;
                 }
                 $din = WarehouseInDetail::create($product_detailin);
+                // ---------
+                $product_detailin['doc_id'] =$ic->id;
+                $product_detailin['operation'] = 1;
+                InventoryDetail::create($product_detailin);
+                // ----------
                 $in_id = new \App\Models\IDs();
                 $in_id->id = $din->id;
                 $in_id->qty = $din->quantity;
@@ -250,6 +260,12 @@ class InventoryCheckController extends Controller
                 }
                 Inventory::subProductInv($product_detailin['product_id'], $data['wh_id'],$seri_sub , $product->price_avg ,0);
                 \App\Models\WarehouseoutDetail::c_create($product_detailin); 
+                 // ---------
+                 $data_seri['doc_type'] = 'ci';
+                 $product_detailin['doc_id'] =$ic->id;
+                 $product_detailin['operation'] = -1;
+                 InventoryDetail::create($product_detailin);
+                 // ----------
                 $product_detailin['is_seri'] = 0;
             }
 
@@ -271,6 +287,12 @@ class InventoryCheckController extends Controller
                 {
                     $product_detailin['quantity'] =$product_detail['error'] - ( $seri_add - $seri_sub) ;
                     $din = WarehouseInDetail::create($product_detailin);
+                    // 
+                     // ---------
+                    $product_detailin['doc_id'] =$ic->id;
+                    $product_detailin['operation'] = 1;
+                    InventoryDetail::create($product_detailin);
+                    // ----------
                     $in_id = new \App\Models\IDs();
                     $in_id->id = $din->id;
                     $in_id->qty = $din->quantity;
@@ -288,7 +310,11 @@ class InventoryCheckController extends Controller
                     $product_detailin['in_ids'] = json_encode( $out_ids);
                     $product_detailin['quantity'] = $product_detail['error'] - (  $seri_sub - $seri_add  ) ;
                     \App\Models\WarehouseoutDetail::c_create($product_detailin); 
-           
+                    // ---------
+                    $product_detailin['doc_id'] =$ic->id;
+                    $product_detailin['operation'] = -1;
+                    InventoryDetail::create($product_detailin);
+                    // ----------
                 }
             }
             else
@@ -317,13 +343,24 @@ class InventoryCheckController extends Controller
                     $product_detailin['in_ids'] = json_encode( $out_ids);
                     $product_detailin['quantity'] = $product_detail['error'] - (  $seri_sub - $seri_add  ) ;
                     \App\Models\WarehouseoutDetail::c_create($product_detailin); 
-           
+                    // ---------
+                    $product_detailin['doc_id'] =$ic->id;
+                    $product_detailin['operation'] = -1;
+                    InventoryDetail::create($product_detailin);
+                    // ----------
                 }
                 if($product_detail['error'] - (  $seri_sub - $seri_add  ) < 0)
                 {
+                    
                     $product_detailin['quantity'] = $product_detail['error'] - ( $seri_add - $seri_sub ) ;
                     // $product_detailin['prebalance'] +=$seri_add;
                     $din = WarehouseInDetail::create($product_detailin);
+                     // ---------
+                     $product_detailin['doc_id'] =$ic->id;
+                     $product_detailin['operation'] = +1;
+                    //  dd($product_detailin)
+                     InventoryDetail::create($product_detailin);
+                     // ----------
                     $in_id = new \App\Models\IDs();
                     $in_id->id = $din->id;
                     $in_id->qty = $din->quantity;
@@ -342,7 +379,7 @@ class InventoryCheckController extends Controller
        ///create log /////////////
         $content = 'thêm phiếu kiểm kho' ;
         \App\Models\Log::insertLogNew($content,$ic->id,'ic',$user->id);
-    
+        \DB::commit();
        return response()->json(['msg'=>'Thêm đơn hàng thành công!','status'=>true]);
 
     }

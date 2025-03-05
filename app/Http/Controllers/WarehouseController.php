@@ -165,7 +165,7 @@ class WarehouseController extends Controller
             return back()->with('error','Không tìm thấy dữ liệu');
         }
     }
-
+   
     /**
      * Update the specified resource in storage.
      */

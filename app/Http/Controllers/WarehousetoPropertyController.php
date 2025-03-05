@@ -88,6 +88,7 @@ class WarehousetoPropertyController extends Controller
             'series'=>'string|nullable',
         ]);
         $data = $request->all();
+        \DB::beginTransaction();
         $n_count_series = 0;
         $pro_inventory = Inventory::where('product_id',$data['product_id'])->where('wh_id', $data['wh_id'])->first();
         if(!$pro_inventory || $pro_inventory->quantity < $data['quantity'] )
@@ -179,6 +180,7 @@ class WarehousetoPropertyController extends Controller
             $data_seri['in_id'] = $wi_seri->id;
             \App\Models\PropertySeries::create($data_seri);
             $detail_in = \App\Models\WarehouseInDetail::where('doc_id',$wi_seri->wi_id)
+            ->where('is_deleted',0)
                 ->where('product_id',$wi_seri->product_id)->first();
             $in_id = Inventory::updateWarehouseInDetails($data['product_id'], $data['wh_id'],$detail_in);
             array_push($in_ids, $in_id);
@@ -190,11 +192,16 @@ class WarehousetoPropertyController extends Controller
             $product_detail['wo_id'] =  $wtp->id;
             $product_detail['product_id']= $data['product_id'];
             $product_detail['quantity'] = $data['quantity'];
-            $product_detail['price'] = $data['price'];
+            $product_detail['price'] = 0;
             $product_detail['in_ids'] = json_encode($in_ids);
             $product_detail['doc_type']='wp';
             $product_detail['wh_id']=$data['wh_id'];
             \App\Models\WarehouseoutDetail::c_create($product_detail);
+              //-----------------
+              $product_detail['doc_id'] =  $wtp->id;
+              $product_detail['operation'] =  -1;
+              \App\Models\InventoryDetail::create($product_detail);
+              //---------------
             ///CAP NHAT WAREHOUSETOPROPERTIES
             $wtp->in_ids = json_encode($in_ids);
             $wtp->save();
@@ -202,6 +209,7 @@ class WarehousetoPropertyController extends Controller
             ///create log /////////////
             $content = 'tạo phiếu chuyển kho sử dụng' ;
             \App\Models\Log::insertLogNew($content,$wtp->id,'wtp',$user->id);
+            \DB::commit();
             return redirect()->route('warehousetoproperty.index')->with('success','Tạo chuyển kho sử dụng thành công!');
         }
         else
@@ -278,6 +286,7 @@ class WarehousetoPropertyController extends Controller
             'price'=>'numeric|required|gt:0',
         ]);
         $data = $request->all();
+        \DB::beginTransaction();
         $inventory = \App\Models\Inventory::where('product_id',$data['product_id'])
             ->where('wh_id',$data['wh_id'])->first();
         $pinventory = \App\Models\InventoryProperties::where('product_id',$data['product_id'])
@@ -368,9 +377,11 @@ class WarehousetoPropertyController extends Controller
         
         //xoa warehouse out detail
         // \DB::select("update from warehouseout_details set wo_id = 0 where doc_type='wp' and wo_id = ".$wtp->id);
-        $detail_outs = \App\Models\WarehouseoutDetail::where('doc_type','wp')->where('wo_id',$wtp->id)->get();
+        $detail_outs = \App\Models\WarehouseoutDetail::where('doc_type','wp')
+        ->where('is_deleted',0)
+        ->where('wo_id',$wtp->id)->get();
         \App\Models\WarehouseoutDetail::deleteWO($detail_outs ,'wp');
-        \App\Models\Inventory::deleteWarehouseToProperty($wtp);
+        \App\Models\Inventory::deleteWarehouseToProperty($detail_outs);
         \App\Models\InvPropertyDetail::remove($wtp->id,'wp');
         //TAO MOI
         //tim prebalance cua san pham truoc khi xuat
@@ -400,6 +411,7 @@ class WarehousetoPropertyController extends Controller
            
 
             $detail_in = \App\Models\WarehouseInDetail::where('doc_id',$wi_seri->wi_id)
+            ->where('is_deleted',0)
                 ->where('product_id',$wi_seri->product_id)->first();
             $in_id = Inventory::updateWarehouseInDetails($data['product_id'], $data['wh_id'],$detail_in);
             array_push($in_ids, $in_id);
@@ -411,12 +423,16 @@ class WarehousetoPropertyController extends Controller
             $product_detail['wo_id'] =  $wtp->id;
             $product_detail['product_id']= $data['product_id'];
             $product_detail['quantity'] = $data['quantity'];
-            $product_detail['price'] = $data['price'];
+            $product_detail['price'] = 0;
             $product_detail['in_ids'] = json_encode($in_ids);
             $product_detail['doc_type']='wp';
             $product_detail['wh_id']=$data['wh_id'];
             \App\Models\WarehouseoutDetail::c_create($product_detail);
-
+            //-----------------
+            $product_detail['doc_id'] =  $wtp->id;
+            $product_detail['operation'] =  -1;
+            \App\Models\InventoryDetail::create($product_detail);
+            //---------------
             ////cap nhat warehousetoproperty
             $data['in_ids'] = json_encode($in_ids);
             $user = auth()->user();
@@ -429,6 +445,7 @@ class WarehousetoPropertyController extends Controller
             ///create log /////////////
             $content = 'cập nhật phiếu chuyển kho sử dụng' ;
             \App\Models\Log::insertLogNew($content,$wtp->id,'wtp',$user->id);
+            \DB::commit();
             return redirect()->route('warehousetoproperty.index')->with('success','Tạo chuyển kho sử dụng thành công!');
      
         }
@@ -449,6 +466,7 @@ class WarehousetoPropertyController extends Controller
             return redirect()->route('unauthorized');
         }
         //
+        \DB::beginTransaction();
         $wtp = WarehouseToProperty::find($id);
         if (\App\Models\InvPropertyDetail::check_sold($id,'wp'))
         {
@@ -469,9 +487,11 @@ class WarehousetoPropertyController extends Controller
             \DB::select($sql);
             //xoa warehouse out detail
             // \DB::select("update from warehouseout_details set wo_id = 0 where doc_type='wp' and wo_id = ".$wtp->id);
-            $detail_outs = \App\Models\WarehouseoutDetail::where('doc_type','wp')->where('wo_id',$wtp->id)->get();
+            $detail_outs = \App\Models\WarehouseoutDetail::where('doc_type','wp')
+            ->where('is_deleted',0)
+            ->where('wo_id',$wtp->id)->get();
             \App\Models\WarehouseoutDetail::deleteWO($detail_outs ,'wp');
-            \App\Models\Inventory::deleteWarehouseToProperty($wtp);
+            \App\Models\Inventory::deleteWarehouseToProperty($detail_outs);
             //xoa detail in của properties
             \App\Models\InvPropertyDetail::remove($wtp->id,'wp');
             
@@ -480,6 +500,7 @@ class WarehousetoPropertyController extends Controller
             $content = 'xóa phiếu chuyển kho sử dụng' ;
             \App\Models\Log::insertLogNew($content,$wtp->id,'wtp',$user->id);
             $wtp->delete();
+            \DB::commit();
             return redirect()->route('warehousetoproperty.index')->with('success','Xóa chuyển kho sử dụng thành công!');
     
         }

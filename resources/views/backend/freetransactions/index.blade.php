@@ -47,7 +47,8 @@
                     <label class="w-12 flex-none xl:w-auto xl:flex-initial mr-2">Thời gian</label>
                     <select name="select_year" id="tabulator-html-filter-type" class="form-select w-full mt-2 sm:mt-0 sm:w-auto" >
                         <option value="0" selected>-chọn năm-</option>
-                        <option value="{{$curYear}}" {{$curYear==$select_year?'selected':''}}>2024</option>
+                        <option value="2025" {{2025==$select_year?'selected':''}}>2025</option>
+                        <option value="2024" {{2024==$select_year?'selected':''}}>2024</option>
                     </select>
                     <select name="select_month" id="tabulator-html-filter-type" class="form-select w-full mt-2 sm:mt-0 sm:w-auto" >
                         <option value="0" selected>-chọn tháng-</option>

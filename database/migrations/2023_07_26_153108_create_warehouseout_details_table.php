@@ -25,6 +25,7 @@ return new class extends Migration
             $table->Integer('prebalance')->nullable();
             $table->String('doc_type')->default('wo') ;
             $table->integer('qty_returned')->default(0) ;
+            $table->integer('is_deleted')->default(0);
             $table->timestamps();
         });
     }

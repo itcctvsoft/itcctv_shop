@@ -95,6 +95,7 @@ class WarehousetransferController extends Controller
             return response()->json(['msg'=>'Hai kho phải khác nhau!','status'=>false]);
         }
         ////average price///////////////////
+        \DB::beginTransaction();
         $details = $request->products;
         $count_item = 0;
         foreach ($details as $detail)
@@ -213,7 +214,9 @@ class WarehousetransferController extends Controller
                     ->where('product_id',$detail['id'])->where('wh_id',$data['wh_id1'])->where('is_sold',0)->first();
                 //tao out seri trong kho 1
                 \App\Models\WarehouseoutDetailSeries::create_from_in_seri($wi_seri,$wf->id,'ti');
-                $detail_in = \App\Models\WarehouseInDetail::where('doc_id',$wi_seri->wi_id)->where('wh_id',$data['wh_id1'])
+                $detail_in = \App\Models\WarehouseInDetail::where('doc_id',$wi_seri->wi_id)
+                    ->where('is_deleted',0)
+                    ->where('wh_id',$data['wh_id1'])
                     ->where('product_id',$wi_seri->product_id)->first();
                 //cap nhat detail in của seri va lay id detail in  
                 $in_id = Inventory::transferDetailInsSeries($product_detail['product_id'], $data['wh_id1'],$detail_in);
@@ -226,6 +229,11 @@ class WarehousetransferController extends Controller
             $product_detail['doc_type']='ti'; //loai xuat la phieu xuat ban hang
             //tao detail xuat kho cho kho 1
             \App\Models\WarehouseoutDetail::c_create($product_detail);
+            //-----------------
+            $product_detail['doc_id'] =    $wf->id;
+            $product_detail['operation'] =  -1;
+            \App\Models\InventoryDetail::create($product_detail);
+            //---------------
             $product_detail['doc_id'] = $wf->id;
             $product_detail['wh_id'] = $data['wh_id2'];
             $product_detail['is_seri'] = $count_n>0?1:0  ;
@@ -239,6 +247,11 @@ class WarehousetransferController extends Controller
                 $product_detail['prebalance'] = 0;
             //tao phiếu nhập cho kho 2
             \App\Models\WarehouseInDetail::create($product_detail);
+            //-----------------
+            $product_detail['doc_id'] =    $wf->id;
+            $product_detail['operation'] =  1;
+            \App\Models\InventoryDetail::create($product_detail);
+            //------
         }
  
          ///create ship invocie ///////////
@@ -257,7 +270,7 @@ class WarehousetransferController extends Controller
         
         $content = 'tạo phiếu chuyển kho từ '.$kho1.' sang kho '.$kho2 ;
         \App\Models\Log::insertLogNew($content,$wf->id,'ti',$user->id);
-     
+       \DB::commit();
         return response()->json(['msg'=>'Thêm thành công!','status'=>true]);
     }
 
@@ -280,7 +293,9 @@ class WarehousetransferController extends Controller
             <li class="breadcrumb-item"><a href="#">/</a></li>
             <li class="breadcrumb-item  " aria-current="page"><a href="'.route('warehousetransfer.index').'">DS chuyển kho</a></li>
             <li class="breadcrumb-item active" aria-current="page"> Xem chi tiết</li>';
-            $wi_details = WarehouseInDetail::where('doc_id',$id)->where('doc_type','ti')->get();
+            $wi_details = WarehouseInDetail::where('doc_id',$id)
+            ->where('is_deleted',0)
+            ->where('doc_type','ti')->get();
             foreach($wi_details as $ic_detail)
             {
                 $iproductseris = \App\Models\WarehouseinDetailSeries::where('product_id',$ic_detail->product_id)
@@ -386,6 +401,7 @@ class WarehousetransferController extends Controller
             return redirect()->route('unauthorized');
         }
         //
+        \DB::beginTransaction();
         $warehousetrans = Warehousetransfer::find($id);
         $data = $request->importDoc;
          ////average price///////////////////
@@ -408,7 +424,9 @@ class WarehousetransferController extends Controller
         if($warehousetrans)
         {
             $flag = 0;
-            $detailpros = WarehouseInDetail::where('doc_id',$id)->where('doc_type','ti')->get();
+            $detailpros = WarehouseInDetail::where('doc_id',$id)
+            ->where('is_deleted',0)
+            ->where('doc_type','ti')->get();
             foreach($detailpros as $dtpro)
             {
                 if($dtpro->qty_sold > 0)
@@ -454,6 +472,7 @@ class WarehousetransferController extends Controller
             ///create log /////////////
             $content = 'update warehouse transfer id: '.$warehousetrans->id.' warehouse 1: '.$data['wh_id1'].' warehouse 2: '.$data['wh_id2'];
             \App\Models\Log::insertLog($content,$user->id);
+            \DB::commit();
             return response()->json(['msg'=>'Cập nhật thành công!','status'=>true]);
         }
         else
@@ -491,11 +510,13 @@ class WarehousetransferController extends Controller
         }
         //
         $warehousetrans = Warehousetransfer::find($id);
-        
+        \DB::beginTransaction();
         if($warehousetrans)
         {
             $flag = 0;
-            $detailpros = WarehouseInDetail::where('doc_id',$id)->where('doc_type','ti')->get();
+            $detailpros = WarehouseInDetail::where('doc_id',$id)
+            ->where('is_deleted',0)
+            ->where('doc_type','ti')->get();
             foreach($detailpros as $dtpro)
             {
                 if($dtpro->qty_sold > 0)
@@ -526,6 +547,7 @@ class WarehousetransferController extends Controller
             $content = 'delete warehouse transfer stock: '.$warehousetrans->wh_id1 .' to stock: '.$warehousetrans->wh_id2;
             \App\Models\Log::insertLog($content,$user->id);
              $warehousetrans->delete();
+             \DB::commit();
              return redirect()->route('warehousetransfer.index')->with('success','Xóa thành công!');
   
            

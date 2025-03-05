@@ -8,7 +8,7 @@
     <div class="scrollable">
         <a href="javascript:;" class="mobile-menu-toggler"> <i data-lucide="x-circle" class="w-8 h-8 text-white transform -rotate-90"></i> </a>
                 
-    
+               
 <ul>
         <li>
             <a href="{{route('admin')}}" class="menu menu{{$active_menu=='dashboard'?'--active':''}}">
@@ -59,8 +59,8 @@
             </a>
         
       </li> 
-   
-      <li>
+    <!--Quan ly ban hang  -->
+    <li>
         <?php
             $reg_totals = \DB::select("select count(id) as tong from orders where status = 'pending'");
             $reg_total = $reg_totals[0]->tong;
@@ -78,8 +78,21 @@
                   <div class="menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
               </div>
           </a>
-          <ul class="{{($active_menu=='or_list'  )?'menu__sub-open':''}}">
-               
+          <ul class="{{($active_menu=='or_list'|| $active_menu=='customer_list'|| $active_menu=='wo_list'||$active_menu=='wo_add'||$active_menu=='delivery_list' )?'menu__sub-open':''}}">
+                <li>
+                  <a href="{{route('warehouseout.index')}}" class="menu {{$active_menu=='wo_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="shopping-bag"></i> </div>
+                      <div class="menu__title">Ds bán hàng
+                       
+                      </div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('warehouseout.create')}}" class="menu {{$active_menu=='wo_add'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="plus"></i> </div>
+                      <div class="menu__title"> Thêm bán hàng</div>
+                  </a>
+              </li>
              
               <li>
                   <a href="{{route('order.index')}}" class="menu {{$active_menu=='or_list'?'menu--active':''}}">
@@ -94,11 +107,163 @@
                       </div>
                   </a>
               </li>
-             
+              <li>
+                  <a href="{{route('customer.index')}}" class="menu {{$active_menu=='customer_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="users"></i> </div>
+                      <div class="menu__title">Ds khách hàng</div>
+                  </a>
+              </li>
+                <li>
+                  <a href="{{route('delivery.index')}}" class="menu {{$active_menu=='delivery_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="truck"></i> </div>
+                      <div class="menu__title">Ds nhà vận chuyển</div>
+                  </a>
+              </li>
              
           </ul>
       </li>
- 
+        <!--Quan ly kho menu  -->
+        <li>
+          <a href="javascript:;" class="menu  class="menu {{($active_menu=='ic_list'|| $active_menu=='wtd_list'||$active_menu=='wtp_list'||   $active_menu=='des_inv' || $active_menu=='wm_trans' || $active_menu=='wi_trans'|| $active_menu=='sup_list'|| $active_menu=='i_list'|| $active_menu=='bi_list'|| $active_menu =='wh_add'|| $active_menu=='wh_list'    )?'menu--active':''}}">
+              <div class="menu__icon"> <i data-lucide="database"></i> </div>
+              <div class="menu__title">
+                  Quản lý kho 
+                  <div class="menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
+              </div>
+          </a>
+          <ul class="{{($active_menu=='ic_list'|| $active_menu=='wtd_list'||$active_menu=='wtp_list' ||   $active_menu=='des_inv' || $active_menu=='wm_trans'|| $active_menu=='wi_trans'|| $active_menu=='sup_list'||$active_menu=='wi_add'||$active_menu=='wi_list'||$active_menu=='i_list'||$active_menu=='bi_list'|| $active_menu =='wh_add'|| $active_menu=='wh_list' )?'menu__sub-open':''}}">
+          <li>
+                  <a href="{{route('warehousein.index')}}" class="menu {{$active_menu=='wi_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="corner-up-right"></i> </div>
+                      <div class="menu__title"> Danh sách nhập kho</div>
+                  </a>
+              </li>      
+            <li>
+                  <a href="{{route('warehousein.create')}}" class="menu {{$active_menu=='wi_add'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="plus"></i> </div>
+                      <div class="menu__title"> Nhập kho</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('combocreation.index')}}" class="menu {{$active_menu=='combo_list'?'menu--active':''}}">
+                      <div class=" menu__icon"> <i data-lucide="figma"></i> </div>
+                      <div class=" menu__title">Danh sách tạo thành phẩm</div>
+                  </a>
+                </li>
+              <li>
+                  <a href="{{route('inventory.index')}}" class="menu {{$active_menu=='i_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="database"></i> </div>
+                      <div class="menu__title"> Tồn kho</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('inventorycheck.index')}}" class="menu {{$active_menu=='ic_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="pen-tool"></i> </div>
+                      <div class="menu__title"> Kiểm kho</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('warehousetransfer.index')}}" class="menu {{$active_menu=='wi_trans'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="git-branch"></i> </div>
+                      <div class="menu__title"> Chuyển kho</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('warehousetomaintain.index')}}" class="menu {{$active_menu=='wm_trans'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="crosshair"></i> </div>
+                      <div class="menu__title"> Chuyển kho bảo hành</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('warehousetoproperty.index')}}" class="menu {{$active_menu=='wtp_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="crosshair"></i> </div>
+                      <div class="menu__title"> Chuyển kho sử dụng</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('warehousetodestroy.index')}}" class="menu {{$active_menu=='wtd_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="crosshair"></i> </div>
+                      <div class="menu__title"> Chuyển kho hủy</div>
+                  </a>
+              </li>
+              
+              <li>
+                  <a href="{{route('supplier.index')}}" class="menu {{$active_menu=='sup_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="users"></i> </div>
+                      <div class="menu__title"> Danh sách nhà cung cấp</div>
+                  </a>
+              </li>
+                <li>
+                  <a href="{{route('warehouse.index')}}" class="menu {{$active_menu=='wh_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="figma"></i> </div>
+                      <div class="menu__title">Danh sách kho</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('warehouse.create')}}" class="menu {{$active_menu=='wh_add'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="plus"></i> </div>
+                      <div class="menu__title"> Thêm kho</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('binventory.index')}}" class="menu {{$active_menu=='bi_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="play"></i> </div>
+                      <div class="menu__title"> Tồn kho đầu kì</div>
+                  </a>
+              </li>
+             
+             
+              <li>
+                  <a href="{{route('inventorydestroy.index')}}" class="menu {{$active_menu=='des_inv'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="trash-2"></i> </div>
+                      <div class="menu__title">DS kho hủy</div>
+                  </a>
+              </li>
+              
+          </ul>
+      </li>
+ <!--Quan ly tien  -->
+        <li>
+          <a href="javascript:;" class="menu  class="menu {{($active_menu=='freetranstype_add'||$active_menu=='freetranstype_list'|| $active_menu=='ft_list'|| $active_menu=='bt_list'||$active_menu=='bank_list'|| $active_menu=='bank_add'    )?'menu--active':''}}">
+              <div class="menu__icon"> <i data-lucide="dollar-sign"></i> </div>
+              <div class="menu__title">
+                  Quản lý quỹ 
+                  <div class="menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
+              </div>
+          </a>
+          <ul class="{{($active_menu=='freetranstype_add'||$active_menu=='freetranstype_list'||  $active_menu=='ft_list'|| $active_menu=='bt_list'|| $active_menu=='bank_list'|| $active_menu=='bank_add')?'menu__sub-open':''}}">
+              <li>
+                  <a href="{{route('bankaccount.index')}}" class="menu {{$active_menu=='bank_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="briefcase"></i> </div>
+                      <div class="menu__title">Danh sách tài khoản</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('bankaccount.create')}}" class="menu {{$active_menu=='bank_add'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="plus"></i> </div>
+                      <div class="menu__title"> Thêm tài khoản</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('bankaccount.viewtrans')}}" class="menu {{$active_menu=='bt_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="repeat"></i> </div>
+                      <div class="menu__title"> Ds giao dịch tài khoản</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('freetranstype.index')}}" class="menu {{$active_menu=='freetranstype_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="book"></i> </div>
+                      <div class="menu__title"> Loại thu chi</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('freetransaction.index')}}" class="menu {{$active_menu=='ft_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="wind"></i> </div>
+                      <div class="menu__title"> Ds phiếu thu chi</div>
+                  </a>
+              </li>
+          </ul>
+      </li>
       <!-- product category menu -->
       <li>
           <a href="javascript:;" class="menu {{($active_menu =='pro_add'|| $active_menu=='pro_list' || $active_menu =='brand_list' || $active_menu == 'brand_list' || $active_menu=='cat_add'|| $active_menu=='cat_list')?'menu--active':''}}">
@@ -184,7 +349,149 @@
           </ul>
       </li>
     
- 
+       <!--Quan ly tai san menu  -->
+       <li>
+          <a href="javascript:;" class="menu  class="menu {{($active_menu=='ptm_list' || $active_menu=='ptd_list'|| $active_menu=='ptw_list'  || $active_menu=='pro_inv'   )?'menu--active':''}}">
+              <div class="menu__icon"> <i data-lucide="crosshair"></i> </div>
+              <div class="menu__title">
+                  Quản lý tài sản
+                  <div class="menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
+              </div>
+          </a>
+          <ul class="{{($active_menu=='ptm_list'|| $active_menu=='ptw_list'||$active_menu=='ptd_list'||  $active_menu=='pro_inv'     )?'menu__sub-open':''}}">
+              
+              <li>
+                  <a href="{{route('propertytodestroy.index')}}" class="menu {{$active_menu=='wtd_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="trash"></i> </div>
+                      <div class="menu__title"> Chuyển kho hủy</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('propertytowarehouse.index')}}" class="menu {{$active_menu=='ptw_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="cpu"></i> </div>
+                      <div class="menu__title">  chuyển kho bán</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('propertytomaintain.index')}}" class="menu {{$active_menu=='ptm_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="crosshair"></i> </div>
+                      <div class="menu__title">  chuyển kho bảo hành</div>
+                  </a>
+              </li>
+             <li>
+                  <a href="{{route('inventoryproperty.index')}}" class="menu {{$active_menu=='pro_inv'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="slack"></i> </div>
+                      <div class="menu__title">DS kho sử dụng</div>
+                  </a>
+              </li>
+          </ul>
+      </li>
+      
+    
+        <!--Quan ly bao hanh -->
+        <li>
+          <a href="javascript:;" class="menu  class="menu {{($active_menu=='mtp_list' || $active_menu=='mtd_list' || $active_menu=='mtw_list' || $active_menu=='mb_list' || $active_menu=='ms_list'|| $active_menu=='mainsent_list'||  $active_menu=='mainin_list'||  $active_menu=='main_inv'    )?'menu--active':''}}">
+              <div class="menu__icon"> <i data-lucide="pie-chart"></i> </div>
+              <div class="menu__title">
+                  Quản lý bảo hành
+                  <div class="menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
+              </div>
+          </a>
+          <ul class="{{($active_menu=='mtp_list'|| $active_menu=='mtd_list'|| $active_menu=='mtw_list' || $active_menu=='mb_list' || $active_menu=='ms_list'|| $active_menu=='mainsent_list'|| $active_menu=='mainin_list'||  $active_menu=='main_inv' )?'menu__sub-open':''}}">
+                <li>
+                  <a href="{{route('inventorymaintenance.index')}}" class="menu {{$active_menu=='main_inv'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="codepen"></i> </div>
+                      <div class="menu__title">Tồn kho bảo hành</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('maintainin.index')}}" class="menu {{$active_menu=='mainin_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="layers"></i> </div>
+                      <div class="menu__title">DS nhận bảo hành</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('maintainsent.index')}}" class="menu {{$active_menu=='ms_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="briefcase"></i> </div>
+                      <div class="menu__title">DS gửi bảo hành</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('maintainback.index')}}" class="menu {{$active_menu=='mb_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="framer"></i> </div>
+                      <div class="menu__title">DS trả bảo hành</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('maintaintowarehouse.index')}}" class="menu {{$active_menu=='mtw_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="cpu"></i> </div>
+                      <div class="menu__title">Chuyển kho bán</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('maintaintodestroy.index')}}" class="menu {{$active_menu=='mtd_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="trash-2"></i> </div>
+                      <div class="menu__title">Chuyển kho hủy</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('maintaintoproperty.index')}}" class="menu {{$active_menu=='mtp_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="slack"></i> </div>
+                      <div class="menu__title">Chuyển kho sử dụng</div>
+                  </a>
+              </li>
+          </ul>
+      </li>
+      
+     <!--Bao cao -->
+     <li>
+          <a href="javascript:;" class="menu " class="menu {{($active_menu=='report_list'     )?'menu--active':''}}">
+              <div class="menu__icon"> <i data-lucide="book-open"></i> </div>
+              <div class="menu__title">
+                  Báo cáo
+                  <div class="menu__sub-icon "> <i data-lucide="chevron-down"></i> </div>
+              </div>
+          </a>
+          <ul class="{{($active_menu=='report_list'     )?'menu__sub-open':''}}">
+              
+              <li>
+                  <a href="{{route('report.money')}}" class="menu {{$active_menu=='report_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="dollar-sign"></i> </div>
+                      <div class="menu__title"> Lợi nhuận</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('report.thuchi')}}" class="menu {{$active_menu=='report_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="dollar-sign"></i> </div>
+                      <div class="menu__title"> Thu chi</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('report.congnokhach')}}" class="menu {{$active_menu=='report_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="dollar-sign"></i> </div>
+                      <div class="menu__title"> Công nợ khách</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('report.congnosup')}}" class="menu {{$active_menu=='report_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="dollar-sign"></i> </div>
+                      <div class="menu__title"> Công nợ nhà cung cấp</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('report.sanpham')}}" class="menu {{$active_menu=='report_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="dollar-sign"></i> </div>
+                      <div class="menu__title"> Sản phẩm</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('report.quy')}}" class="menu {{$active_menu=='report_list'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="dollar-sign"></i> </div>
+                      <div class="menu__title">Quỹ</div>
+                  </a>
+              </li>
+          </ul>
+    </li>
    
     <!-- setting menu -->
     <li>
@@ -232,7 +539,18 @@
                       <div class="menu__title"> Nhật ký</div>
                   </a>
               </li>
-              
+              <li>
+                  <a href="{{route('kiot.index')}}" class="menu {{$active_menu=='kiot'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="plus"></i> </div>
+                      <div class="menu__title"> Kiot</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('setting.update_data')}}" class="menu {{$active_menu=='updatedata'?'menu--active':''}}">
+                      <div class="menu__icon"> <i data-lucide="plus"></i> </div>
+                      <div class="menu__title">Cập nhật hệ thống</div>
+                  </a>
+              </li>
           </ul>
     </li>
 </ul>

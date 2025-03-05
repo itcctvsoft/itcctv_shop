@@ -85,6 +85,7 @@ class PropertytoWarehouseController extends Controller
             'time'=>'numeric|nullable',
         ]);
         $data = $request->all();
+        \DB::beginTransaction();
         // return $data;
         $inventory = \App\Models\Inventory::where('product_id',$data['product_id'])
             ->where('wh_id',$data['wh_id'])->first();
@@ -180,6 +181,11 @@ class PropertytoWarehouseController extends Controller
             }
             $product_detail['is_seri'] = $count_n> 0?1:0;
             WarehouseInDetail::create($product_detail);
+            //-----------------
+            $product_detail['doc_id'] =  $ptw->id;
+            $product_detail['operation'] =  1;
+            \App\Models\InventoryDetail::create($product_detail);
+            //---------------
             \App\Models\InventoryProperties::addPropertytoWarehouse($data['product_id'],$data['wh_id'],$data['quantity'],$data['price'] );
            
             //tao inv_property_detail out
@@ -214,6 +220,7 @@ class PropertytoWarehouseController extends Controller
             ///create log /////////////
             $content = 'tạo phiếu chuyển kho bán hàng' ;
             \App\Models\Log::insertLogNew($content,$ptw->id,'ptw',$user->id);
+            \DB::commit();
             return redirect()->route('propertytowarehouse.index')->with('success','Tạo chuyển kho bán hàng thành công!');
      
         }
@@ -246,7 +253,9 @@ class PropertytoWarehouseController extends Controller
         if(!$ptw)
             return back()->with('error','Không tìm thấy dữ liệu!');
          
-        $wi_details = \App\Models\WarehouseInDetail::where('doc_id',$ptw->id)->where('doc_type','pi')->get();
+        $wi_details = \App\Models\WarehouseInDetail::where('doc_id',$ptw->id)
+        ->where('is_deleted',0)
+        ->where('doc_type','pi')->get();
         foreach ($wi_details as $wi_detail)
         {
             if ($wi_detail->qty_sold > 0)
@@ -296,6 +305,7 @@ class PropertytoWarehouseController extends Controller
         ]);
         $data = $request->all();
         // return $data;
+        \DB::beginTransaction();
         $ptw = PropertytoWarehouse::find($id);
         if(!$ptw)
             return back()->with('error','Không tìm thấy dữ liệu!');
@@ -368,7 +378,9 @@ class PropertytoWarehouseController extends Controller
             return back()->with('error','Số lượng vượt quá tồn kho!');
         }
         
-        $wi_details = \App\Models\WarehouseInDetail::where('doc_id',$ptw->id)->where('doc_type','pi')->get();
+        $wi_details = \App\Models\WarehouseInDetail::where('doc_id',$ptw->id)
+        ->where('is_deleted',0)
+        ->where('doc_type','pi')->get();
         foreach ($wi_details as $wi_detail)
         {
             if ($wi_detail->qty_sold > 0)
@@ -420,6 +432,11 @@ class PropertytoWarehouseController extends Controller
         }
         $product_detail['is_seri'] = $count_n> 0?1:0;
         $ptw_detail = WarehouseInDetail::create($product_detail)   ;
+        //-----------------
+        $product_detail['doc_id'] =  $ptw->id;
+        $product_detail['operation'] =  1;
+        \App\Models\InventoryDetail::create($product_detail);
+        //---------------
         //save propertytowarehouse doc
         \App\Models\InventoryProperties::addPropertytoWarehouse($data['product_id'],$data['wh_id'],$data['quantity'],$data['price'] );
      
@@ -452,6 +469,7 @@ class PropertytoWarehouseController extends Controller
 
         $content = 'cập nhật phiếu chuyển kho bán hàng' ;
         \App\Models\Log::insertLogNew($content,$ptw->id,'ptw',$user->id);
+        \DB::commit();
         return redirect()->route('propertytowarehouse.index')->with('success','Cập nhật chuyển kho bán hàng thành công!');
     
     }
@@ -467,12 +485,16 @@ class PropertytoWarehouseController extends Controller
         {
             return redirect()->route('unauthorized');
         }
+        \DB::beginTransaction();
+        
         $ptw = PropertytoWarehouse::find($id);
         if(!$ptw)
             return back()->with('error','Không tìm thấy dữ liệu!');
        
         //tim het các warehouse in moi tao, kiem tra da xuat chua
-        $wi_details = \App\Models\WarehouseInDetail::where('doc_id',$ptw->id)->where('doc_type','pi')->get();
+        $wi_details = \App\Models\WarehouseInDetail::where('doc_id',$ptw->id)
+        ->where('is_deleted',0)
+        ->where('doc_type','pi')->get();
         foreach ($wi_details as $wi_detail)
         {
             if ($wi_detail->qty_sold > 0)
@@ -501,6 +523,8 @@ class PropertytoWarehouseController extends Controller
         $content = 'xóa phiếu chuyển kho bán hàng' ;
         \App\Models\Log::insertLogNew($content,$ptw->id,'ptw',$user->id);
         $ptw->delete();
+
+        \DB::commit();
         return redirect()->route('propertytowarehouse.index')->with('success','Cập nhật chuyển kho bán hàng thành công!');
    
     }

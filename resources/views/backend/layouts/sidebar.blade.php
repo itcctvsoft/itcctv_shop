@@ -550,6 +550,18 @@
                       <div class="side-menu__title"> Nhật ký</div>
                   </a>
               </li>
+              <li>
+                  <a href="{{route('kiot.index')}}" class="side-menu {{$active_menu=='kiot'?'side-menu--active':''}}">
+                      <div class="side-menu__icon"> <i data-lucide="plus"></i> </div>
+                      <div class="side-menu__title"> Kiot</div>
+                  </a>
+              </li>
+              <li>
+                  <a href="{{route('setting.update_data')}}" class="side-menu {{$active_menu=='updatedata'?'side-menu--active':''}}">
+                      <div class="side-menu__icon"> <i data-lucide="plus"></i> </div>
+                      <div class="side-menu__title">Cập nhật hệ thống</div>
+                  </a>
+              </li>
           </ul>
     </li>
 </ul>

@@ -62,7 +62,20 @@ class BlogController extends Controller
             'content'=>'string|required',
             
         ]);
-       
+        $messages = [
+            'g-recaptcha-response.required' => 'Bạn phải bấm vào reCAPTCHA.',
+            'g-recaptcha-response.captcha' => 'Captcha lỗi, xin thử lại sau.',
+        ];
+
+        $validator = Validator::make($request->all(), [
+            'g-recaptcha-response' => 'required|captcha'
+        ], $messages);
+        if ($validator->fails()) {
+            return redirect('home')
+                        ->withErrors($validator)
+                        ->withInput();
+        }
+
         $data = $request->all();
         $data['status'] = 'active';
         if(auth()->user())
@@ -166,7 +179,8 @@ class BlogController extends Controller
             $sql_pop_blog = "SELECT * from blogs where status = 'active' and cat_id =".$cat->id." order by hit desc LIMIT 6";
             $data['popblogs'] =   DB::select($sql_pop_blog) ;
             $data['tags'] = \DB::select("select * from  tags  where status='active' order by rand() LIMIT 16 ");
-          
+            $data['cat'] = $cat;
+            $data['cats'] =\App\Models\BlogCategory::where('status','active')->get();
             return view($this->front_view.'.blog.category',$data);
         }
         else
@@ -180,9 +194,10 @@ class BlogController extends Controller
         {
             $data['pagetitle']="Bài viết";
             
-           
+          
 
             $data['blog'] = Blog::where('slug',$slug)->first();
+            $data['page_up_title'] = $data['blog']->title;
             $data['detail'] = \App\Models\SettingDetail::find(1);  
             $data['categories'] = \App\Models\Category::where('status','active')->where('parent_id',null)->get();
             $data['links']= array();

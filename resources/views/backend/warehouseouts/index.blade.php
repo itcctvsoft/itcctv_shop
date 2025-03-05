@@ -99,6 +99,23 @@
                         <td class="text-right">
                             
                             {{ number_format($item->final_amount, 0, '.', ',');}}
+                            <?php
+                                $in_ids = json_decode($item->returned_ids);
+                                 
+                                if($item->status =='active' && $in_ids && count($in_ids) > 0)
+                                {
+                                    // dd($in_ids);
+                                    $ids = collect($in_ids)->pluck('id')->toArray();
+                                    $return_wos =  \App\Models\Warehouseout::whereIn('id', $ids)->where('status','returned')->get();
+                                   
+                                    $sum_return = 0;
+                                    foreach($return_wos as $return_wo)
+                                    {
+                                        $sum_return += $return_wo->final_amount;
+                                    }
+                                    echo '<br/>Trả hàng: '.(number_format($sum_return, 0,',','.'));
+                                }
+                            ?>
                             
                         </td>
                         <td class="text-right">

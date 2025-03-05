@@ -56,12 +56,12 @@ class InventoryDetail extends Model
     {
         if($this->doc_type == 'wi' || $this->doc_type == 'wir')
         {
-            $wi = \App\Models\Warehousein::find($this->doc_id);
+            $wi = \App\Models\WarehouseIn::find($this->doc_id);
             return $wi;
         }
         if($this->doc_type == 'wo' || $this->doc_type == 'wor')
         {
-            $wo = \App\Models\WarehouseOut::find($this->doc_id);
+            $wo = \App\Models\Warehouseout::find($this->doc_id);
             return $wo;
         }
         if($this->doc_type == 'din')

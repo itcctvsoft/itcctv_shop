@@ -116,11 +116,11 @@
                             <div class="mt-3">
                                 <div class="mt-2">
                                     <div class="form-check form-switch"> 
-                                        <input id="check_paidall" class="form-check-input"   type="checkbox">
+                                        <input id="check_paidall" class="form-check-input"  disabled type="checkbox">
                                          <label class="form-check-label" for="checkbox-switch-7">Đã thanh toán hết</label> </div>
                                 </div>
                                 <input  id='paid_amount' type="number" name='paid_amount' value="{{$warehousein->paid_amount+ $ship_amount}}"
-                                class="form-control py-3 mt-2 " placeholder="số tiền đã thanh toán">
+                                class="form-control py-3 mt-2 "  disabled>
                                 <input type='hidden' value="{{$warehousein->final_amount + $ship_amount}}" id='totalcost'/>
                             </div>
                             <div class="mt-3">

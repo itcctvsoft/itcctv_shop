@@ -104,6 +104,10 @@
                                         </td>
                                         <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "  class="text-right border-b dark:border-darkmode-400">
                                             {{$wi->quantity}}
+                                            @if($wi->qty_returned && $wi->qty_returned > 0)
+                                                <br/><span> Đã trả : {{$wi->qty_returned}} </span>
+                                            @endif
+                                             
                                         </td>
                                         <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "  class="text-right border-b dark:border-darkmode-400">
                                             {{number_format($wi->price, 0, '.', ',')}}

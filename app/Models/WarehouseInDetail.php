@@ -46,15 +46,20 @@ class WarehouseInDetail extends Model
         else
             $data['prebalance'] = 0;
         $data['wo_id']= 0;
-        $data['doc_type'] = 'wo';
+        $data['doc_type'] = 'dco';
         $data['wh_id'] =  $detailpro->wh_id;
         $data['product_id'] = $detailpro->product_id;
         $data['quantity'] =$detailpro->quantity;
         $data['price'] =$detailpro->price;
         $data['in_ids']= $detailpro->id;
-        \App\Models\WarehouseoutDetail::create($data);
+    //    -------
+        $data['doc_id'] =  0;
+        $data['operation'] =  -1;
+        \App\Models\InventoryDetail::create($data);
+
+        // \App\Models\WarehouseoutDetail::create($data);
         //cap nhat widetail ve 0 giong nhu xoa
-        $detailpro->doc_id = 0;
+        $detailpro->is_deleted = 1;
         $detailpro->save();
     }
 

@@ -101,6 +101,8 @@ class WarehousetoDestroyController extends Controller
         {
             return back()->with('error','Tồn kho không đủ!')->withInput();;
         }
+
+        \DB::beginTransaction();
         $series = array();
         if(isset($request->series))
         {
@@ -183,6 +185,7 @@ class WarehousetoDestroyController extends Controller
              $data_seri['in_id'] = $wi_seri->id;
              \App\Models\DestroySeries::create($data_seri);
              $detail_in = \App\Models\WarehouseInDetail::where('doc_id',$wi_seri->wi_id)
+             ->where('is_deleted',0)
                  ->where('product_id',$wi_seri->product_id)->first();
              $in_id = Inventory::updateWarehouseInDetails($data['product_id'], $data['wh_id'],$detail_in);
              array_push($in_ids, $in_id);
@@ -193,11 +196,19 @@ class WarehousetoDestroyController extends Controller
             $product_detail['wo_id'] =  $wtd->id;
             $product_detail['product_id']= $data['product_id'];
             $product_detail['quantity'] = $data['quantity'];
-            $product_detail['price'] = $data['price'];
+            $product_detail['price'] = 0;
             $product_detail['in_ids'] = json_encode($in_ids);
             $product_detail['doc_type']='wd';
             $product_detail['wh_id']=$data['wh_id'];
             \App\Models\WarehouseoutDetail::c_create($product_detail);
+
+            //-----------------
+            $product_detail['doc_id'] =  $wtd->id;
+            $product_detail['operation'] =  -1;
+            \App\Models\InventoryDetail::create($product_detail);
+            //---------------
+
+        
             ///CAP NHAT WAREHOUSETOPROPERTIES
             $wtd->in_ids = json_encode($in_ids);
             $wtd->save();
@@ -207,6 +218,8 @@ class WarehousetoDestroyController extends Controller
             ///create log /////////////
             $content = 'tạo phiếu chuyển kho hủy' ;
             \App\Models\Log::insertLogNew($content,$wtd->id,'wtd',$user->id);
+            
+            \DB::commit();
             return redirect()->route('warehousetodestroy.index')->with('success','Tạo chuyển kho hủy thành công!');
      
         }
@@ -280,6 +293,7 @@ class WarehousetoDestroyController extends Controller
             'price'=>'numeric|required|gt:0',
         ]);
         $data = $request->all();
+        \DB::beginTransaction();
         if(  $data['quantity'] <= 0 )
         {
             return back()->with('error','Số lượng phải lớn hơn 0!')->withInput();;
@@ -364,9 +378,11 @@ class WarehousetoDestroyController extends Controller
         \DB::select($sql);  //XOA so seri
          //xoa warehouse out detail
         // \DB::select("update from warehouseout_details set wo_id = 0 where doc_type='wd' and wo_id = ".$wtd->id);
-        $detail_outs = \App\Models\WarehouseoutDetail::where('doc_type','wd')->where('wo_id',$wtd->id)->get();
+        $detail_outs = \App\Models\WarehouseoutDetail::where('doc_type','wd')
+        ->where('is_deleted',0)
+        ->where('wo_id',$wtd->id)->get();
         \App\Models\WarehouseoutDetail::deleteWO($detail_outs ,'wd');
-        \App\Models\Inventory::deleteWarehouseToDestroy($wtd);
+        \App\Models\Inventory::deleteWarehouseToDestroy($detail_outs);
 
          //TAO MOI
         //tim prebalance cua san pham truoc khi xuat
@@ -396,6 +412,7 @@ class WarehousetoDestroyController extends Controller
            
 
             $detail_in = \App\Models\WarehouseInDetail::where('doc_id',$wi_seri->wi_id)
+            ->where('is_deleted',0)
                 ->where('product_id',$wi_seri->product_id)->first();
             $in_id = Inventory::updateWarehouseInDetails($data['product_id'], $data['wh_id'],$detail_in);
             array_push($in_ids, $in_id);
@@ -405,12 +422,16 @@ class WarehousetoDestroyController extends Controller
             $product_detail['wo_id'] =  $wtd->id;
             $product_detail['product_id']= $data['product_id'];
             $product_detail['quantity'] = $data['quantity'];
-            $product_detail['price'] = $data['price'];
+            $product_detail['price'] =0;
             $product_detail['in_ids'] = json_encode($in_ids);
             $product_detail['doc_type']='wd';
             $product_detail['wh_id']=$data['wh_id'];
             \App\Models\WarehouseoutDetail::c_create($product_detail);
-
+            //-----------------
+            $product_detail['doc_id'] =  $wtd->id;
+            $product_detail['operation'] =  -1;
+            \App\Models\InventoryDetail::create($product_detail);
+            //---------------
             $data['in_ids'] = json_encode($in_ids);
             $user = auth()->user();
             $data['total'] = $data['price'] * $data['quantity'];
@@ -419,6 +440,7 @@ class WarehousetoDestroyController extends Controller
             ///create log /////////////
             $content = 'cập nhật phiếu chuyển kho hủy' ;
             \App\Models\Log::insertLogNew($content,$wtd->id,'wtd',$user->id);
+            \DB::commit();
             return redirect()->route('warehousetodestroy.index')->with('success','Tạo chuyển kho hủy thành công!');
      
         }
@@ -443,6 +465,7 @@ class WarehousetoDestroyController extends Controller
         
         if($wtd)
         {
+            \DB::beginTransaction();
             ////capnhat lai warehouse series chua xuat
             $wd_series = \App\Models\DestroySeries::where('wd_id',$wtd->id)->get();
             foreach($wd_series as $wo_seri)
@@ -455,16 +478,19 @@ class WarehousetoDestroyController extends Controller
             \DB::select($sql);
             //xoa warehouse out detail
             // \DB::select("update from warehouseout_details set wo_id = 0 where doc_type='wd' and wo_id = ".$wtd->id);
-            $detail_outs = \App\Models\WarehouseoutDetail::where('doc_type','wd')->where('wo_id',$wtd->id)->get();
+            $detail_outs = \App\Models\WarehouseoutDetail::where('doc_type','wd')
+            ->where('is_deleted',0)
+            ->where('wo_id',$wtd->id)->get();
             \App\Models\WarehouseoutDetail::deleteWO($detail_outs ,'wd');
             
-            \App\Models\Inventory::deleteWarehousetoDestroy($wtd);
+            \App\Models\Inventory::deleteWarehousetoDestroy( $detail_outs);
      
             ///create log /////////////
             $user = auth()->user();
             $content = 'xóa phiếu chuyển kho hủy' ;
             \App\Models\Log::insertLogNew($content,$wtd->id,'wtd',$user->id);
             $wtd->delete();
+            \DB::commit();
             return redirect()->route('warehousetodestroy.index')->with('success','Xóa chuyển kho hủy thành công!');
     
         }

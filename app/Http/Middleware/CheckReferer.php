@@ -16,16 +16,17 @@ class CheckReferer
     public function handle(Request $request, Closure $next): Response
     {
         $allowedDomain = env('ITCCTV_SERVER') ;
-        if( $allowedDomain )
-        {
-            $referer = $request->headers->get('REMOTE_ADDR');
+        $referer = $request->headers->get('REMOTE_ADDR');
        
-            // dd($request);
-            if ($referer && strpos($referer, $allowedDomain) === false) {
-                return response('Forbidden', 403);
-            }
-    
+        // dd($request);
+        if ($referer && strpos($referer, $allowedDomain) === false) {
+            return response('Forbidden', 403);
         }
+
+        // if ($origin && strpos($origin, $allowedDomain) === false) {
+        //     return response('Forbidden', 403);
+        // }
+
         return $next($request);
     }
 }

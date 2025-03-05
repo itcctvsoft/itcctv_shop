@@ -204,16 +204,22 @@ class WarehouseoutDetail extends Model
         else
             $datai['prebalance'] = 0;
         $datai['doc_id']= 0;
-        $datai['doc_type'] =  'wi';
+        $datai['doc_type'] =  'dco';
         $datai['wh_id'] =  $wh_id;
         $datai['product_id'] = $detailpro->product_id;
         $datai['quantity'] = $detailpro->quantity;
         $datai['qty_sold'] = 0;
         $datai['price'] =$detailpro->price;
-        \App\Models\WarehouseInDetail::create($datai);
+
+        $datai['doc_id'] =  0;
+        $datai['operation'] =  1;
+        \App\Models\InventoryDetail::create($datai);
+
+        // \App\Models\WarehouseInDetail::create($datai);
         //cap nhat warehouse out wo_id về không để ko dc phiếu nào quản lý
         // $detailpro->delete();
-        $detailpro->wo_id = 0;
+        // $detailpro->wo_id = 0;
+        $detailpro->is_deleted = 1;
         $detailpro->save();
     }
 
