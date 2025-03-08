@@ -8,6 +8,9 @@ Purchase: https://themeforest.net/user/left4code/portfolio
 Renew Support: https://themeforest.net/user/left4code/portfolio
 License: You must have a valid license purchased only from themeforest(the above link) in order to legally use the theme for your project.
 -->
+<?php
+$detail = \App\Models\SettingDetail::find(1);
+?> 
 <html lang="en" class="light">
     <!-- BEGIN: Head -->
     <head>

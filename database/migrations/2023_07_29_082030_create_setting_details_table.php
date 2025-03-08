@@ -22,8 +22,8 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->string('icon')->nullable() ;
             $table->string('map')->nullable() ;
-            $table->mediumtext('memory')->nullable();
-            $table->mediumtext('keyword')->nullable();
+            $table->text('memory')->nullable();
+            $table->text('keyword')->nullable();
             $table->string('mst')->nullable();
             $table->string('email')->nullable();
             $table->string('facebook')->nullable();
@@ -35,8 +35,10 @@ return new class extends Migration
             $table->string('public_key')->nullable();
             $table->string('web_title')->nullable();
             $table->string('paymentinfo')->nullable();
-            $table->mediumtext('logo_bct')->nullable();
-            
+            $table->text('logo_bct')->nullable();
+            $table->text('thoigiandk')->nullable();
+            $table->text('nguoilienhe')->nullable();
+            $table->integer('version')->default(1);
             $table->timestamps();
         });
     }

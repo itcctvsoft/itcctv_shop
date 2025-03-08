@@ -1,6 +1,9 @@
  <!-- BEGIN: Dark Mode Switcher-->
-      
-        <!-- END: Dark Mode Switcher-->
+     
+ <div style="background-color: rgb(var(--color-primary) / var(--tw-bg-opacity)); height:50px; width:100%; text-align:center; color:white; display: flex; align-items: center; justify-content: center;">
+              Phần mềm quản lý bán hàng ITCCTV_SHOP phiên bản {{$detail->version}}.0 
+       </div>
+    <!-- END: Dark Mode Switcher-->
         
         <!-- BEGIN: JS Assets-->
         <script src="https://developers.google.com/maps/documentation/javascript/examples/markerclusterer/markerclusterer.js"></script>

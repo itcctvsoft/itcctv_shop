@@ -1,6 +1,4 @@
-<?php
-    $detail = \App\Models\SettingDetail::find(1);
-?>
+
 <meta charset="utf-8">
 <link href="{{$detail->icon}}" rel="shortcut icon">
 <meta name="viewport" content="width=device-width, initial-scale=1">

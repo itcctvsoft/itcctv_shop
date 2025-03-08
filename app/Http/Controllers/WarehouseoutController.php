@@ -574,7 +574,7 @@ class WarehouseoutController extends Controller
                 $in_ids = json_decode($warehouseout->returned_ids);
                 $return_wos = null;
                 $sum_return = 0;
-                $in_ids = json_decode($warehouseout->returned_ids);
+         
                                  
                 if($warehouseout->status =='active' && $in_ids && count($in_ids) > 0)
                 {
@@ -585,19 +585,41 @@ class WarehouseoutController extends Controller
                     {
                         $sum_return += $return_wo->final_amount;
                     }
+                    foreach ($return_wos as $return_wo)
+                    {
+                        $return_wo->details = \App\Models\WarehouseoutDetail::where('wo_id',$return_wo->id)
+                            ->where('is_deleted',0)->where('doc_type','wor')->get();
+                        foreach( $return_wo->details as $wi_detail)
+                        {
+                            $series = "";
+                            $i = 0;
+                            $wi_seris = \DB::select("select seri from warehouseout_detail_series where wo_id =".$wi_detail->wo_id ." and doc_type='wor' and product_id = ".$wi_detail->product_id );
+                            foreach($wo_seris as $wo_seri)
+                            {
+                                if ($i > 0)
+                                    $series .= ",";
+                                $series .= $wo_seri->seri;
+                                $i ++;
+                            }
+                            $wi_detail->series = $series;
+                        }
+                    }
                    
                 }
-
+  
               
-                return view('backend.warehouseouts.show',compact('breadcrumb','warehouseout','active_menu','wo_details','amount_after_trans','amount_before_trans','amount_before_paid','paid_amount','sum_return'));
+                return view('backend.warehouseouts.show',compact('breadcrumb','warehouseout','active_menu','wo_details','amount_after_trans','amount_before_trans','amount_before_paid','paid_amount','sum_return','return_wos'));
             }
             else
             {
                 if($warehouseout->status == 'returned' )
                 {
                     // $sup_trans = \App\Models\SupTransaction::where('doc_type','wr')->where('doc_id',$warehouseout->id)->first();
-                    $sup_trans = \App\Models\SupTransaction::where('doc_type','wor')->where('doc_id',$warehouseout->id)->where('is_delete',0)->first();
-                    
+                    $sup_trans = \App\Models\SupTransaction::whereIn('doc_type', ['wor', 'wr'])
+                        ->where('doc_id', $warehouseout->id)
+                        ->where('is_delete', 0)
+                        ->first();
+
                     $paid_amount = $warehouseout->paid_amount;
                     $buyer =  \App\Models\User::find($warehouseout->customer_id);
                      $amount_before_paid = $sup_trans->total  ;
@@ -620,9 +642,11 @@ class WarehouseoutController extends Controller
                         }
                         $wi_detail->series = $series;
                     }
-
+                    $in_ids = json_decode($warehouseout->returned_ids);
+                    $ids = collect($in_ids)->pluck('id')->toArray();
+                    $original_wo = \App\Models\Warehouseout::whereIn('id', $ids)->where('status','active')->first();
                  
-                    return view('backend.warehouseouts.showreturn',compact('breadcrumb','warehouseout','active_menu','wo_details','amount_after_trans','amount_before_trans','amount_before_paid'));
+                    return view('backend.warehouseouts.showreturn',compact('breadcrumb','warehouseout','active_menu','wo_details','amount_after_trans','amount_before_trans','amount_before_paid','original_wo'));
 
                 }
                 else
