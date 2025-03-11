@@ -38,8 +38,8 @@
 
         <?php if (count($pro_carts) === 0): ?>
         <div class="empty-cart flex justify-center items-center flex-col">
-            <img src="https://i.pinimg.com/originals/26/39/1e/26391e7b551203ac10f1c8ee89b151fe.gif" alt="Giỏ hàng trống"
-                style="width: 400px; height: 300px; margin-bottom: 1rem;">
+            <img src="https://cdn.dribbble.com/userupload/23000951/file/original-51162083f8d27d9af7c6c0a19b9116ba.gif"
+                alt="Giỏ hàng trống" style="width: 400px; height: 300px; margin-bottom: 1rem;">
         </div>
         <?php endif; ?>
         <!--/.shopping-cart-item -->

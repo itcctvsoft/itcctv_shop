@@ -1,79 +1,64 @@
-<?php
- 
-  $setting =\App\Models\SettingDetail::find(1);
-  $user = auth()->user();
-  if($user)
-  {
-      $sql  = "select c.quantity, d.* from (SELECT * from shoping_carts where user_id = "
-      .$user->id.") as c left join products as d on c.product_id = d.id where d.status = 'active'  ";
-      $pro_carts =   \DB::select($sql ) ;
-  }
-  else
-  {
-      $pro_carts = [];
-  }
-  $cart_size= count($pro_carts);
-?>
-@extends('frontend_tp.layouts.master')
-@section('head_css')
+@extends('frontend_tp3.layouts.master')
+
+@section('topcss')
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
 @endsection
+
 @section('content')
-@include('frontend_tp.layouts.breadcrumb')
-  
-<div class="wrapper !bg-[#ffffff]">
-    <div class="container pt-14 xl:pt-[4.5rem] lg:pt-[4.5rem] md:pt-[4.5rem] pb-[4.5rem] xl:pb-24 lg:pb-24 md:pb-24">
-        <div class="xl:w-10/12 w-full flex-[0_0_auto] px-[15px] max-w-full !mx-auto">
-            <div class ='job-list'>
-                @foreach ($orders as $order )
-                    <a  href="javascript:void(0)" onclick="show({{$order->id}})" class="card mb-4 lift">
-                        <div class="card-body p-5">
-                            <span class="flex flex-wrap mx-[-15px] justify-between items-center">
-                                <span class="xl:w-4/12 lg:w-5/12 md:w-5/12 w-full flex-[0_0_auto] px-[15px] max-w-full mb-2 xl:mb-0 lg:mb-0 md:mb-0 flex items-center text-[#60697b]">
-                                  
-                                <span class=" flex items-center justify-center font-bold leading-[1.7] tracking-[-0.01rem] rounded-[100%] bg-[rgba(116,126,209)] opacity-100 text-white !w-9 !h-9 text-[0.85rem] mr-3">{{$order->id}}</span> 
-                                    {{substr($order->created_at,0,10)}}
-                                </span>
-                                <span class="xl:w-4/12 lg:w-3/12 md:w-3/12 w-5/12   flex-[0_0_auto] px-[15px] max-w-full text-[#60697b] flex items-center">
-                                    {{number_format($order->final_amount,0,'.',',')}}
-                                </span>
-                                <span class="w-7/12 md:w-4/12 lg:w-3/12 xl:w-3/12 flex-[0_0_auto] px-[15px] max-w-full text-[#60697b] flex items-center">
-                                    {{$order->status}} 
-                                </span>
-                                <span class="hidden xl:block lg:block w-1/12 flex-[0_0_auto] px-[15px] max-w-full !text-center text-[#60697b]">
-                                <i class="uil uil-angle-right-b before:content-['\e930']"></i>
-                                </span>
-                            </span>
-                            <div id="order{{$order->id}}" style="background: #eee; display:none; padding-left: 10px; padding-top:10px">
-                                @foreach ($order->details as $detail )
-                                    <div class="card-body p-2">
-                                        <span class="flex flex-wrap mx-[-15px] justify-between items-center">
-                                            <span class="xl:w-5/12 lg:w-5/12 md:w-5/12 w-full flex-[0_0_auto] px-[15px] max-w-full mb-2 xl:mb-0 lg:mb-0 md:mb-0 flex items-center text-[#60697b]">
-                                                {{$detail->title}}
-                                            </span>
-                                            <span class="xl:w-4/12 lg:w-3/12 md:w-3/12 w-5/12   flex-[0_0_auto] px-[15px] max-w-full text-[#60697b] flex items-center">
-                                                {{number_format($detail->price,0,'.',',')}}
-                                            </span>
-                                            <span class="w-7/12 md:w-4/12 lg:w-3/12 xl:w-3/12 flex-[0_0_auto] px-[15px] max-w-full text-[#60697b] flex items-center">
-                                                {{$detail->quantity}} 
-                                            </span>
-                                        </span>
-                                    </div>
-                                @endforeach
-                            </div>
+    @include('frontend_tp3.layouts.breadcrumb')
+
+    <div class="account-container">
+        <!-- Menu bên trái -->
+        <aside class="account-menu">
+            <ul>
+                <li class="menu-item "><a href="#">Thông tin tài khoản</a></li>
+                <li class="menu-item "><a href="{{ route('front.profile.addressbook') }}">Địa chỉ mua hàng</a></li>
+                <li class="menu-item"><a href="{{ route('front.shopingcart.view') }}"><i class="icon-cart"></i> Giỏ hàng</a>
+                </li>
+                <li class="menu-item active"><a href="{{ route('front.profile.order') }}"><i class="icon-history"></i> Lịch
+                        sử mua hàng</a></li>
+                <li class="menu-item"><a href="{{ route('front.wishlist.view') }}"><i class="icon-heart"></i> Danh sách yêu
+                        thích</a></li>
+            </ul>
+        </aside>
+
+        <!-- Nội dung chính -->
+        <div class="account-details">
+            <div class="order-list-container">
+                @foreach ($orders as $order)
+                    <div class="order-item" onclick="toggleDetails({{ $order->id }})">
+                        <div class="order-circle">{{ $order->id }}</div>
+                        <div class="order-info">
+                            <div class="order-date">{{ $order->created_at->format('Y-m-d') }}</div>
+                            <div class="order-total">{{ number_format($order->final_amount, 0, '.', ',') }} VND</div>
+                            <div class="order-status">{{ $order->status }}</div>
                         </div>
-                    </a>
+                        <div class="order-toggle"><span class="icon-toggle">▶</span></div>
+                    </div>
+                    <div id="order-details-{{ $order->id }}" class="order-details" style="display: none;">
+                        @foreach ($order->details as $detail)
+                            <div class="order-product">
+                                <span>{{ $detail->title }}</span>
+                                <span>{{ number_format($detail->price, 0, '.', ',') }} VND</span>
+                                <span>{{ $detail->quantity }}</span>
+                            </div>
+                        @endforeach
+                    </div>
                 @endforeach
             </div>
         </div>
     </div>
-</div>
-
 @endsection
-@section('scripts')
-<script>
-function show(id)
-{
-    $("#order" + id).toggle();
-}
-</script>
+
+@section('footscript')
+    <script>
+        function toggleDetails(orderId) {
+            const details = document.getElementById(`order-details-${orderId}`);
+            details.style.display = details.style.display === "none" ? "block" : "none";
+
+            const toggleIcon = details.previousElementSibling.querySelector(".icon-toggle");
+            toggleIcon.textContent = details.style.display === "block" ? "▼" : "▶";
+        }
+    </script>
 @endsection

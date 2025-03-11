@@ -9,7 +9,7 @@ class CreatePaymentTransTable extends Migration
     public function up()
     {
         Schema::create('payment_trans', function (Blueprint $table) {
-            $table->id(); // bigint UNSIGNED AUTO_INCREMENT
+            $table->id(); // bigint UNSIGNED AUTO_INCREMENT (Primary Key)
             $table->string('gateway'); // varchar(255)
             $table->string('account_number'); // varchar(255)
             $table->string('sub_account')->nullable(); // varchar(255) DEFAULT NULL
@@ -21,7 +21,7 @@ class CreatePaymentTransTable extends Migration
             $table->text('body')->nullable(); // text DEFAULT NULL
             $table->dateTime('transaction_date')->nullable(); // datetime DEFAULT NULL
             $table->timestamps(); // created_at and updated_at
-            $table->string('order_id'); // varchar(255)
+            $table->string('order_id'); // Đảm bảo order_id là VARCHAR(255), tránh lỗi integer
         });
     }
 

@@ -3,12 +3,7 @@
  $setting = \App\Models\SettingDetail::find(1);
  $user = auth()->user();
  if ($user) {
-     $pro_carts = \DB::table('shoping_carts as c')
-         ->join('products as d', 'c.product_id', '=', 'd.id')
-         ->where('c.user_id', $user->id)
-         ->where('d.status', 'active')
-         ->select('c.quantity', 'd.*')
-         ->get();
+     $pro_carts = \DB::table('shoping_carts as c')->join('products as d', 'c.product_id', '=', 'd.id')->where('c.user_id', $user->id)->where('d.status', 'active')->select('c.quantity', 'd.*')->get();
  } else {
      $pro_carts = [];
  }
