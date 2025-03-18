@@ -2,7 +2,7 @@
 
 # 🚀 **<span style='font-size: 3rem;'>Shop-main</span>**
 
-<a href="https://mimibeoxu.com/2025/01/16/huong-dan-cai-dat-va-su-dung-shop-main/">📚 Docs</a> • 🔧 Setup Instructions • ✨ Features
+<a href="https://itcctv.vn/tblogs/itcctv-shop-phan-mem-quan-ly-ban-hang-ma-nguon-mo-tren-laravel">📚 Docs</a> • <a href="#setup-instructions">🔧 Setup Instructions</a> • <a href="#features">✨ Features</a>
 
 </div>
 
@@ -20,13 +20,15 @@
 
 ## 📖 Documents
 
-For detailed instructions on setup and usage, visit the [documentation](https://mimibeoxu.com/2025/01/16/huong-dan-cai-dat-va-su-dung-shop-main/).
+For detailed instructions on setup and usage, visit the [documentation](https://itcctv.vn/tblogs/itcctv-shop-phan-mem-quan-ly-ban-hang-ma-nguon-mo-tren-laravel).
 
 ---
 
 ## 🔥 What's New
 
--   **01/16/2025**: Initialized the shop-main repository.
+-   **04/09/2025**: `Cn payment vs frontendtp` - Updated payment integration.
+-   **02/23/2025**: `cn lai toan bo backend model` - Revised backend model.
+-   **01/16/2025**: Initial commit of the shop-main repository.
 
 ---
 
@@ -36,18 +38,42 @@ Follow the instructions below to set up and run the project.
 
 ### 📚 Installation
 
-1. Install PHP packages by running the command `composer install`.
-2. Create a storage link using `php artisan storage:link`.
-3. Run migrations with the command `php artisan migrate`.
-4. Seed initial data by executing `php artisan db:seed`.
-5. Create a session table by running `php artisan session:table` followed by `php artisan migrate`.
-6. Handle proxy issues (if any) using `php artisan config:cache` and `php artisan dump-autoload`.
+1. Install PHP packages by running the command:
+    ```bash
+    composer install
+    ```
+2. Create a storage link:
+    ```bash
+    php artisan storage:link
+    ```
+3. Run migrations:
+    ```bash
+    php artisan migrate
+    ```
+4. Seed initial data:
+    ```bash
+    php artisan db:seed
+    ```
+5. Create a session table:
+    ```bash
+    php artisan session:table
+    php artisan migrate
+    ```
+6. Handle proxy issues (if any):
+    ```bash
+    php artisan config:cache
+    php artisan dump-autoload
+    ```
 
 ---
 
 ## 💻 Build & Run
 
-Run the application using the command `php artisan serve`.
+Run the application using:
+
+```bash
+php artisan serve
+```
 
 ### 🔧 System Requirements
 
@@ -75,7 +101,7 @@ cd shop-main
 ## 🌍 Community
 
 -   🎤 [Twitter](https://twitter.com) - Follow us for updates.
--   📚 [Documentation](https://mimibeoxu.com/2025/01/16/huong-dan-cai-dat-va-su-dung-shop-main/) - Detailed documentation.
+-   📚 [Documentation](https://itcctv.vn/tblogs/itcctv-shop-phan-mem-quan-ly-ban-hang-ma-nguon-mo-tren-laravel) - Detailed documentation.
 -   📨 [Newsletter](https://example.com) - Subscribe for insights and tips.
 
 ---

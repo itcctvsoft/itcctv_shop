@@ -125,11 +125,11 @@ class PaymentController extends Controller
                 ]);
                 $order_trans = \App\Models\OrderTrans::where('code', $orderId)->first();
                 if ($order_trans && $order_trans->status == 'Unpaid') {
-                    $order_trans->status = 'paid';
+                    $order_trans->status = 'Paid';
                     $order_trans->save();
                     $order = \App\Models\Order::find($order_trans->order_id);
                     if ($order) {
-                        $order->status = 'paid';
+                        $order->status = 'Paid';
                         $order->save();
                         //tang tien quy cho khach hang
                         $userController = new \App\Http\Controllers\UserController();

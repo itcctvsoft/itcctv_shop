@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('content'); ?>
     <section class="payment-section py-5" style="background-color: #f8f9fa;">
         <div class="container">
