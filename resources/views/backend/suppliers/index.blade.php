@@ -15,7 +15,8 @@
                 <div class="w-56 relative text-slate-500">
                     <form action="{{route('supplier.search')}}" method = "get">
                        
-                        <input type="text" name="datasearch" class="ipsearch form-control w-56 box pr-10" placeholder="Search...">
+                        <input type="text" value = "{{isset($searchdata)?$searchdata:''}}" name="datasearch" class="ipsearch form-control w-56 box pr-10" placeholder="Search...">
+                  
                         <i class="w-4 h-4 absolute my-auto inset-y-0 mr-3 right-0" data-lucide="search"></i> 
                     </form>
                 </div>
@@ -129,7 +130,7 @@
                                 </a>
                                 <div class="dropdown-menu w-40"> 
                                     <ul class="dropdown-content">
-                                        <li><a class="dropdown-item" href="{{route('supplier.show',$item->id)}}" class="flex items-center mr-3" href="javascript:;"> <i data-lucide="eye" class="w-4 h-4 mr-1"></i> Xem công nợ </a></li>
+                                        <li><a class="dropdown-item" href="{{route('user.showsup',$item->id)}}" class="flex items-center mr-3" href="javascript:;"> <i data-lucide="eye" class="w-4 h-4 mr-1"></i> Xem công nợ </a></li>
                                         <li><a class="dropdown-item" href="{{route('supplier.edit',$item->id)}}" class="flex items-center mr-3" href="javascript:;"> <i data-lucide="check-square" class="w-4 h-4 mr-1"></i> Edit </a></li>
                                         <?php ////store recive nhận tiền nhà cung cấp ?>
                                         <li><a class="dropdown-item" href="{{route('user.usertostore',$item->id)}}" class="flex items-center mr-3" href="javascript:;"> <i data-lucide="corner-up-left" class="w-4 h-4 mr-1"></i> Nhận tiền NCC</a></li>

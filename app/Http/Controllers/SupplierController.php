@@ -186,7 +186,7 @@ class SupplierController extends Controller
             <li class="breadcrumb-item"><a href="#">/</a></li>
             <li class="breadcrumb-item  " aria-current="page"><a href="'.route('supplier.index').'">Nhà cung cấp</a></li>
             <li class="breadcrumb-item active" aria-current="page"> tìm kiếm </li>';
-            return view('backend.suppliers.search',compact('suppliers','breadcrumb','searchdata','active_menu'));
+            return view('backend.suppliers.index',compact('suppliers','breadcrumb','searchdata','active_menu'));
         }
         else
         {
@@ -292,6 +292,7 @@ class SupplierController extends Controller
      */
     public function show(string $id)
     {
+        return redirect()->route('user.showsup',$id);
         $func = "sup_list";
         if(!$this->check_function($func))
         {

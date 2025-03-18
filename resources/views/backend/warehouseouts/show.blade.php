@@ -90,7 +90,9 @@
                             
                             <div style="clear:both">&nbsp;<br/></div>
                              
-                            <div style="text-align:center" class="text-primary font-semibold text-2xl">HÓA ĐƠN BÁN HÀNG</div>
+                            <div style="text-align:center" class="text-primary font-semibold text-2xl">HÓA ĐƠN BÁN HÀNG </div>
+                            <div style="text-align:center" class="mt-1 text-xl"> Số: {{$warehouseout->code}}</div>
+                            
                             <div style="text-align:center" class="mt-1 text-xl"> {{ $formatted_date}}</div>
                             <div style="clear:both">&nbsp;<br/></div>
                             <div style="text-align:center; " class=" mt-4 customer_p">
@@ -192,7 +194,7 @@
                                     </tr>
                                     <tr>
                                         <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "  class="text-right" colspan="3">
-                                           Đã thanh toán:
+                                          Đã thanh toán:
                                         </td>
                                         
                                         <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "  class="text-right  " colspan="2">
@@ -211,15 +213,79 @@
                                     </tr>
                                     @if ($sum_return > 0)
                                     <tr>
-                                        <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "  class="text-right text-danger" colspan="3">
-                                          Đã trả hàng:
+                                        <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "  class="text-left text-danger" colspan="1">
+                                            <br/> Tổng trả hàng:
                                         </td>
                                         
-                                        <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "  class="text-right text-danger " colspan="2">
-                                            {{number_format(($sum_return ), 0, '.', ',')}}
+                                        <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "  class="text-right text-danger " colspan="4">
                                             <br/>
+                                            {{number_format(($sum_return ), 0, '.', ',')}}
+                                          
                                         </td>
                                     </tr>
+                                    @foreach ($return_wos as $return_wo)
+                                        <?php
+                                            $date_object = new DateTime($return_wo->created_at);
+                                            $formatted_date = strftime('ngày %d tháng %m năm %Y', $date_object->getTimestamp());
+                                        ?>
+                                        <tr>
+                                        <td   style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "  colspan='3'  class="text-left ">
+                                            HOÁ ĐƠN <a style="font-weight:700" href="{{route('warehouseout.show',$return_wo->id)}}">{{$return_wo->code}} </a> 
+                                        </td>
+                                        <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "  class="text-left "> ngày {{$formatted_date}} </td>
+                                        <td  style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "  class="text-right ">  </td>
+                                        </td>
+                                        </tr>
+                                        <?php
+                                            $i = 1;
+                                        ?>
+                                        @foreach ($return_wo->details as $wi)
+                                        <tr>
+                                            <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "> 
+                                                <?php echo $i; $i ++; ?>
+                                            </td>
+                                            <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="border-b dark:border-darkmode-400">
+                                                <?php
+                                                    $product= \App\Models\Product::find( $wi->product_id);
+                                                ?>
+                                                <div class="  ">
+                                                    <a  href="{{route('inventory.viewproduct',$product->id)}}" > 
+                                                        {{  $product-> title    }} 
+                                                    </a>
+    
+                                                </div>
+                                                
+                                            </td>
+                                            <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="text-right border-b dark:border-darkmode-400 ">
+                                                {{$wi->quantity}}
+                                            </td>
+                                            <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="text-right border-b dark:border-darkmode-400 ">
+                                                {{number_format($wi->price, 0, '.', ',')}}
+                                            </td>
+                                            <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="text-right border-b dark:border-darkmode-400   ">
+                                            {{number_format(($wi->quantity*$wi->price), 0, '.', ',')}}
+                                            </td>
+                                        
+                                        </tr>
+                                        @if ($wi->series != '')
+                                            <tr><td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " ></td><td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " colspan="4">số seri:{{$wi->series}}</td></tr> 
+                                        @endif
+                                        
+                                        @endforeach
+                                        <tr>
+                                            <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "  colspan="2">
+                                                
+                                            </td>
+                                            <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "  colspan="2" class="text-right font-medium ">
+                                                Tổng tiền hàng:
+                                            </td>
+                                            <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "  class="text-right font-medium">
+                                                {{number_format($return_wo->final_amount,0,',','.')}}
+                                            </td>
+                                        </tr>
+                                        
+                                        
+                                    @endforeach
                                     @endif
 
 

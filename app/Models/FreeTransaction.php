@@ -16,6 +16,7 @@ class FreeTransaction extends Model
         $mw->save();
         return $mw;
     }
+    
     public static function addFreeTrans_d($ft)
     {
          

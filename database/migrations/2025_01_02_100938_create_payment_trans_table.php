@@ -22,6 +22,7 @@ return new class extends Migration
             $table->text('body')->nullable(); // Nội dung chi tiết
             $table->dateTime('transaction_date')->nullable(); // Ngày giao dịch
             $table->timestamps(); // Thời gian tạo và cập nhật
+            $table->string('order_id'); // varchar(255)
         });
     }
 

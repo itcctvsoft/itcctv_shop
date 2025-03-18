@@ -125,31 +125,37 @@ class WarehouseoutController extends Controller
         $data['breadcrumb'] = '
         <li class="breadcrumb-item"><a href="#">/</a></li>
         <li class="breadcrumb-item active" aria-current="page"> Danh sách bán hàng </li>';
+    
+        if (isset($request->date1)) {
+            $data['date1'] = trim($request->date1); 
+            $data['date1'] = str_replace('/', '-', $data['date1']); // Chuyển dấu "/" thành "-"
+            
+            // Chuyển đổi từ dd-mm-yyyy sang yyyy-mm-dd
+            $parts = explode('-', $data['date1']);
+            if (count($parts) === 3) {
+                $data['date1'] = "{$parts[2]}-{$parts[1]}-{$parts[0]}"; 
+            } else {
+                $data['date1'] = date("Y-m-d", strtotime("-12 month")); // Mặc định nếu lỗi
+            }
+        } else {
+            $data['date1'] = date("Y-m-d", strtotime("-12 month"));
+        }
         
-        if(isset($request->date1))
-        {
-             
-            $data['date1'] = $request->date1;
-            $data['date1'] = str_replace(',','', $data['date1']);
-            $timestamp = strtotime($data['date1']);
-            $date1 = date("Y-m-d",   $timestamp);
-            // dd( $date1);
-            $data['date1'] =   date("m-d-Y",   $timestamp);
-        }    
-        else
-            $data['date1']   = date("Y-m-d", strtotime("-12 month"));
+        if (isset($request->date2)) {
+            $data['date2'] = trim($request->date2);
+            $data['date2'] = str_replace('/', '-', $data['date2']);
+            
+            $parts = explode('-', $data['date2']);
+            if (count($parts) === 3) {
+                $data['date2'] = "{$parts[2]}-{$parts[1]}-{$parts[0]}";
+            } else {
+                $data['date2'] = date("Y-m-d"); // Mặc định nếu lỗi
+            }
+        } else {
+            $data['date2'] = date("Y-m-d");
+        }
 
-        if(isset($request->date2))
-        {
-            $data['date2'] = $request->date2;
-            $data['date2'] = str_replace(',','', $data['date2']);
-            $timestamp = strtotime($data['date2']);
-            $date2 = date("Y-m-d", $timestamp);
-            $data['date2'] =   date("m-d-Y",   $timestamp);
-        }    
-        else
-            $data['date2'] =  date("Y-m-d");
-
+      
          
         if(isset($request->customer_id))
             $data['customer_id'] = $request->customer_id;
@@ -161,11 +167,11 @@ class WarehouseoutController extends Controller
             $where=" customer_id = ".$data['customer_id'];
         }    
         
-        if(isset($date1) && isset($date2) )
+        if( 1)
         {
             if($where != "")
                 $where .= ' and ';
-            $where.=" datediff( created_at , '".$date1."')>= 0 and datediff(created_at , '".$date2."')<= 0";
+            $where.=" datediff( created_at , '". $data['date1']."')>= 0 and datediff(created_at , '". $data['date2']."')<= 0";
         }
         if($where != "")
             $where = " where ".$where;
@@ -544,18 +550,11 @@ class WarehouseoutController extends Controller
                 $paid_amount = $warehouseout->paid_amount;
                 $buyer =  \App\Models\User::find($warehouseout->customer_id);
                  $amount_before_paid = $sup_trans->total  ;
-                // $amount_before_trans =  $sup_trans->total - $sup_trans->operation* $sup_trans->amount;
-                // $amount_after_trans = $sup_trans->total   +  $warehouseout->paid_amount;
-                // $amount_after_trans = $buyer->budget;
-
+   
                 $amount_before_trans = $warehouseout->debtbefore;
                 $amount_after_trans = $warehouseout->debtafter;
                 $paid_amount = $warehouseout->bankpayment;
-                // if($amount_after_trans < 0)
-                //     $amount_after_trans = $amount_after_trans * (-1);
-                // if($amount_before_trans < 0)
-                //     $amount_before_trans = $amount_before_trans * (-1);
-                // dd($amount_before_trans, $amount_after_trans );
+          
                 $wo_details = WarehouseoutDetail::where('wo_id',$id)->where('is_deleted',0)->where('doc_type','wo')->get();
                 foreach($wo_details as $wi_detail)
                 {
@@ -574,8 +573,6 @@ class WarehouseoutController extends Controller
                 $in_ids = json_decode($warehouseout->returned_ids);
                 $return_wos = null;
                 $sum_return = 0;
-         
-                                 
                 if($warehouseout->status =='active' && $in_ids && count($in_ids) > 0)
                 {
                     // dd($in_ids);
@@ -589,6 +586,7 @@ class WarehouseoutController extends Controller
                     {
                         $return_wo->details = \App\Models\WarehouseoutDetail::where('wo_id',$return_wo->id)
                             ->where('is_deleted',0)->where('doc_type','wor')->get();
+                            
                         foreach( $return_wo->details as $wi_detail)
                         {
                             $series = "";
@@ -606,8 +604,6 @@ class WarehouseoutController extends Controller
                     }
                    
                 }
-  
-              
                 return view('backend.warehouseouts.show',compact('breadcrumb','warehouseout','active_menu','wo_details','amount_after_trans','amount_before_trans','amount_before_paid','paid_amount','sum_return','return_wos'));
             }
             else

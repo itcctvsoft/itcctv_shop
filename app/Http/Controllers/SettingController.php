@@ -86,29 +86,7 @@ class SettingController extends Controller
     }
     public function testApi()
     {
-        // $tokenResponse = Http::post('http://localhost:8000/oauth/token', [
-        //     'grant_type' => 'client_credentials',
-        //     'client_id' => '2',
-        //     'client_secret' => 'RnUVcLgakfxZf4G5EQ0IeKl7hTUj3cjA17c1VRF9',
-        //     'scope' => '*',
-        // ]);
-        $tokenResponse = Http::post('http://localhost:8000/api/v1/login', [
-            'email' => 'itcctv@itcctv.vn' ,
-            'password' =>'@Itcctv123',
-        ]);
-        if (!$tokenResponse->successful()) {
-            return response()->json(['error' => 'Failed to get token'], 500);
-        }
-    
-        $accessToken = $tokenResponse->json()['access_token'];
-        echo $accessToken;
-        echo '<br/>';
-        // $response = Http::withToken($accessToken)->get('http://localhost:8000/api/v1/get_brand');
-        // echo $response->status();
-        // echo $response->body();
-        // if ($response->successful()) {
-        //     return $response->json();
-        // }
+      
     
     }
     public function view_brand()
@@ -360,10 +338,7 @@ class SettingController extends Controller
             $i ++;
         }
         
-        // $sitemap->writeToFile(asset( 'public/sitemap.xml'));
-        //   $sitemap->writeToFile('/home/rnojmetehosting/public_html/tinhocbanme.com/sitemap.xml');
-        // $sitemapPath = public_path('sitemap.xml');
-        // $sitemap->writeToFile($sitemapPath);
+      
         $sitemapPath = $_SERVER['DOCUMENT_ROOT'] . '/sitemap.xml';
         $sitemap->writeToFile($sitemapPath);
         return back()->with('success','Đã cập '.$i.' sitemap' );
@@ -371,18 +346,7 @@ class SettingController extends Controller
     }
     public function capnhatanh()
     {
-        $func = "site_setting";
-        if(!$this->check_function($func))
-        {
-            return redirect()->route('unauthorized');
-        }
-        $products = \App\Models\Product::orderBy('id','desc')->get();
-        foreach($products as $product)
-        {
-            $product->photo = str_replace("tinhoctinhocbanme.com","tinhocbanme.com",$product->photo);
-            // echo $product->photo;
-            $product->save();
-        }
+         
     }
     public function capnhatis_delete_suptrans()
     {
@@ -542,29 +506,7 @@ class SettingController extends Controller
     public function updateInvPro()
     {
         $this->capnhat_loinhuan_wo();
-        // $this->capnhatis_delete_suptrans();
-       
-       /* $func = "site_setting";
-        if(!$this->check_function($func))
-        {
-            return redirect()->route('unauthorized');
-        }
-        $sql = "delete from inv_property_details";
-        \DB::select($sql);
-        $sql = "select * from  warehouse_to_properties ";
-        $wtps = \DB::select($sql);
-        $sql = "select * from  propertyto_warehouses ";
-        $ptws =  \DB::select($sql);
-        foreach ($wtps as $wtp)
-        {
-            \App\Models\InvPropertyDetail::c_create($wtp,'wtp',1); //1 la nhap
-        }
-        foreach ($ptws as $ptw)
-        {
-            \App\Models\InvPropertyDetail::c_create($ptw,'ptw',-1); //-1 la xuat
-        }
-            */
-        // return back()->with('success','cap nhat ');
+     
     }
     public function viewUpdateData()
     {

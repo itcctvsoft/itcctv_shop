@@ -13,6 +13,11 @@ use GuzzleHttp\Client;
 use Spatie\Sitemap\SitemapGenerator;
 use Spatie\Sitemap\Tags\Url;
 use Illuminate\Support\Facades\Http;
+
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithMapping;
+
 class HelpController extends Controller
 {
     protected $s3;
@@ -37,6 +42,7 @@ class HelpController extends Controller
             case 'wo':
                 $msg = 'xuất';
                 break;
+
             case 'ic':
                 $msg = 'kiểm kho';
                 break;
@@ -63,6 +69,15 @@ class HelpController extends Controller
                 break;
             case 'wir':
                 $msg = 'trả hàng nhập';
+                break;
+            case 'wor':
+                $msg = 'trả hàng xuất';
+                break;
+            case 'fi':
+                $msg = 'Phiếu giao dịch';
+                break;
+            case 'fo':
+                $msg = 'Phiếu giao dịch huy';
                 break;
             default:
                 $msg =  $doc_type;
@@ -113,11 +128,84 @@ class HelpController extends Controller
             case 'co':
                 $msg = route('combocreation.show',$doc_id);
                 break;
+            case 'fi':
+                $msg = route('suptransaction.show',$doc_id);
+                break;
+            case 'fo':
+                $msg = '#';
+                break;
+                
             default:
                 $msg =   '#';
                 break;
         }
         return $msg;
+    }
+    public static function html_chitietgd($doc_type,$document)
+    {
+        $html = "";
+        if($doc_type == "fi" || $doc_type == "fo" )
+        {
+            $html = ' <div class="details-container">
+                <!-- Cột 1: Thông tin giao dịch -->
+                <div class="details-column one">
+                    <p><strong>Người giao dịch:</strong>'.  $document->user->full_name.'</p>
+                    <p><strong>Thời gian:</strong>'.$document->created_at .'</p>
+                    <p><strong>Số tiền:</strong>  '. number_format($document->amount, 0, '.', ',') .' VND</p>
+                     <p><strong>Mã phiếu:</strong> <a class="text-danger" href="'. HelpController::url_giaodich($doc_type,$document->id).'">'.$document->code.'</a></p>
+                </div>
+
+                
+            </div>';
+        }
+        if($doc_type == "wi" || $doc_type == "wir" || $doc_type == "wo" || $doc_type == "wor" )
+        {
+            $html = 
+        ' <div class="details-container">
+                <!-- Cột 1: Thông tin giao dịch -->
+                <div class="details-column one">
+                    <p><strong> '.$document->loaiphieu().'</strong></p>
+                    <p><strong>Tên:</strong> '.  $document->user->full_name.'</p>
+                    <p><strong>Thời gian:</strong> '.$document->created_at .'</p>
+                    <p><strong>Số tiền:</strong>  '. number_format($document->final_amount, 0, '.', ',') .' VND</p>
+                    <p><strong>Mã phiếu:</strong> <a class="text-danger" href="'. HelpController::url_giaodich($doc_type,$document->id).'">'.$document->code.'</a></p>
+                </div>
+                            <!-- Cột 2: Danh sách sản phẩm -->
+                <div class="details-column two">
+                    <strong>Chi tiết sản phẩm:</strong>
+                     <div class="product-list">
+                        <!-- Tiêu đề cột -->
+                        <div class="product-item proheader">
+                            <div class="product-name">Tên sản phẩm</div>
+                            <div class="product-quantity">Số lượng</div>
+                            <div class="product-price">Giá</div>
+                        </div>';
+                    $details = $document->details();
+                    foreach ($details    as $detail)
+                    {
+                            $html .= ' <div class="product-item">
+                                            <div class="product-name">' . $detail->title.
+                                            '</div>
+                                        <div class="product-quantity">  '.$detail->quantity.
+                                        '</div>
+                                        <div class="product-price">'.number_format($detail->price, 0, '.', ',').
+                                        '</div>
+                                    </div>';
+                                    if ($detail->series) {
+                                        $html .= 
+                                        '<div class="product-series">
+                                            <span>Series: '.$detail->series.'</span>
+                                        </div>';
+                                    }                
+                    }
+                     
+                    $html .= 
+                    '</div>
+                </div>
+            </div>';
+        }
+        return $html;
+        
     }
     public function send_invoice($wo_id,$uiid)
     {

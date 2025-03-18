@@ -230,7 +230,7 @@ class CustomerController extends Controller
             <li class="breadcrumb-item"><a href="#">/</a></li>
             <li class="breadcrumb-item  " aria-current="page"><a href="'.route('customer.index').'">Khách hàng</a></li>
             <li class="breadcrumb-item active" aria-current="page"> tìm kiếm </li>';
-            return view('backend.customers.search',compact('customers','breadcrumb','searchdata','active_menu'));
+            return view('backend.customers.index',compact('customers','breadcrumb','searchdata','active_menu'));
         }
         else
         {
@@ -313,6 +313,7 @@ class CustomerController extends Controller
      */
     public function show(string $id)
     {
+        return redirect()->route('user.showsup',$id);
         $func = "cus_list";
         if(!$this->check_function($func))
         {

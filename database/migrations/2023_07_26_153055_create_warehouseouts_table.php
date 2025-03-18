@@ -31,7 +31,9 @@ return new class extends Migration
             $table->string('status')->default('active');
             $table->integer('is_global')->default(0) ;
             $table->string('returned_ids')->nullable();
-            
+            $table->unsignedBigInteger('debtbefore') ;
+            $table->unsignedBigInteger('debtafter') ;
+            $table->unsignedBigInteger('bankpayment') ;
             $table->timestamps();
         });
     }

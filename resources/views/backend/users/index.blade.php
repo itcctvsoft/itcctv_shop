@@ -165,15 +165,15 @@
 <!-- end content -->
   <!-- BEGIN: Modal   -->
 <div  id="myModal" class="modal" tabindex="-1" aria-hidden="true">
-<div class="modal-dialog modal-lg">
-         <div class="modal-content">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
              <!-- BEGIN: Modal Header -->
-             <div class="modal-header">
+            <div class="modal-header">
                 <i data-lucide="file"  ></i> <h2 class="font-medium text-base mr-auto"> &nbsp; Thông tin người dùng </h2>    
                 <div id="div_img" class="w-10 h-10 image-fit zoom-in">
                  
                 </div>
-             </div> <!-- END: Modal Header -->
+            </div> <!-- END: Modal Header -->
             <div class="modal-body p-5 text-center"> 
                 
                 <div class="grid grid-cols-12 gap-6 mt-5">
@@ -195,8 +195,9 @@
                 </div>
               
             </div>
-         </div>
- </div> 
+        </div>
+    </div> 
+</div>
    <!-- END: Modal   -->
 @endsection
 @section('scripts')

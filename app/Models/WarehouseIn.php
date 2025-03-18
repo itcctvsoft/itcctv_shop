@@ -51,6 +51,49 @@ class WarehouseIn extends Model
     {
         return $this->belongsTo(User::class, 'supplier_id');
     }
+    public function loaiphieu()
+    {
+        if($this->status =='returned')
+            return 'Phiếu trả hàng nhập';
+        if($this->status =='active')
+            return 'Phiếu nhập hàng';
+        return '';
+    }
+    public function details()
+    {
+        $doc_type = 'wi';
+        if($this->status == 'returned')
+            $doc_type = 'wir';
+        
+        $subquery = \App\Models\Product::select('id','title');
+        $details = \App\Models\WarehouseInDetail::where('doc_id', $this->id)
+            ->where('doc_type', $doc_type)
+            ->where('is_deleted', 0)
+            ->joinSub($subquery, 'products', function ($join) {
+                $join->on('warehouse_in_details.product_id', '=', 'products.id');
+            })
+            ->select(
+                'warehouse_in_details.*', 
+                'products.title', 
+              
+            )
+            ->get();
+        foreach ($details as $wi )
+        {
+            $series = "";
+            $i = 0;
+            $wo_seris = \DB::select("select seri from warehousein_detail_series where (doc_type='wi'or doc_type='wir') and wi_id =".$wi->doc_id ." and product_id = ".$wi->product_id );
+            foreach($wo_seris as $wo_seri)
+            {
+                if ($i > 0)
+                    $series .= ",";
+                $series .= $wo_seri->seri;
+                $i ++;
+            }
+            $wi->series = $series;
+        }
+        return $details;
+    }
     public function updateFinalAmount()
     {
         $details = \App\Models\WarehouseInDetail::where('doc_id',$this->id)->where('doc_type','wi')

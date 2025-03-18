@@ -17,7 +17,83 @@ class SupTransaction extends Model
         
         return $mw;
     }
-    
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'supplier_id');
+    } 
+    public function details()
+    {
+        return null;
+    }
+    public function document()
+    {
+        if($this->doc_type == 'wi' || $this->doc_type == 'wir')
+        {
+            $wi = \App\Models\WarehouseIn::find($this->doc_id);
+            return $wi;
+        }
+        if($this->doc_type == 'wo' || $this->doc_type == 'wor')
+        {
+            $wo = \App\Models\Warehouseout::find($this->doc_id);
+            return $wo;
+        }
+        if($this->doc_type == 'din')
+        {
+            $wi = \App\Models\Din::find($this->doc_id);
+            return $wi;
+        }
+        if($this->doc_type == 'dout')
+        {
+            $wo = \App\Models\DOut::find($this->doc_id);
+            return $wo;
+        }
+        if($this->doc_type == 'fi')
+        {
+            $wo = \App\Models\SupTransaction::find($this->id);
+            return $wo;
+        }
+        if($this->doc_type == 'mb' && $sp->operation == 1)
+        {
+            $wo = \App\Models\MaintainBack::find($this->doc_id);
+            return $wo;
+        }
+        if($this->doc_type == 'mb' && $sp->operation == -1)
+        {
+            $wo = \App\Models\maintainin::find($this->doc_id);
+            return $wo;
+        }
+        return null;
+    }
+    // if($sp->doc_type == 'fi')
+    // {
+    //     $str_route = route('suptransaction.show',$sp->id);
+    //     $loai = 'Phiếu giao dịch';
+      
+    // }
+    // if($sp->doc_type == 'fo' )
+    // {
+    //     $loai = "Phiếu giao dịch hủy/trả xuất hàng";
+    //     if($sp->operation > 0)
+    //       $ptotal = Number_format($sp->amount,0,'.',',');
+    //     else
+    //       $stotal = Number_format($sp->amount,0,'.',',');
+    // }
+    // if($sp->doc_type == 'mb' )
+    // {
+    //     if($sp->operation == 1)
+    //     {
+    //         $loai = 'phiếu trả bảo hành';
+    //         $str_route = route('maintainback.show',$sp->doc_id);
+    //     }
+    //     else
+    //     {
+    //         $loai = 'phiếu nhận bảo hành ';
+    //         $tt = \App\Models\MaintenanceIn::find($sp->doc_id) ;
+    //         $str_route = route('maintainin.show',$sp->doc_id);
+    //     }
+    //     $tt = \App\Models\MaintainBack::find($sp->doc_id) ;
+    //     $doc_notpaid = Number_format($tt->final_amount - $tt->paid_amount,0,'.',',') ;
+    // }
     public static function createSubTransContent($doc_id,$doc_type,$operation,$amount, $supplier_id,$content)
     {
          ///create SupTransaction

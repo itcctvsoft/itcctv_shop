@@ -91,6 +91,11 @@
                             <div style="clear:both">&nbsp;<br/></div>
                              
                             <div style="text-align:center" class="text-primary font-semibold text-2xl">PHIẾU TRẢ HÀNG</div>
+                            <div style="text-align:center" class="mt-1 text-xl"> Số: {{$warehouseout->code}}</div>
+                            <div style="text-align:center" class="mt-1 text-xl text-primary">Hoá đơn gốc:
+                                 <a href="{{route('warehouseout.show',$original_wo->id)}}">{{$original_wo->code}}</a>
+                            </div>
+                          
                             <div style="text-align:center" class="mt-1 text-xl"> {{ $formatted_date}}</div>
                             <div style="clear:both">&nbsp;<br/></div>
                             <div style="text-align:center; " class=" mt-4 customer_p">
@@ -150,6 +155,7 @@
                                     @if ($wi->series != '')
                                         <tr><td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " ></td><td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " colspan="4">số seri:{{$wi->series}}</td></tr> 
                                     @endif
+                                     
                                     @endforeach
                                    
                                    

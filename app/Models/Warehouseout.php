@@ -22,6 +22,51 @@ class Warehouseout extends Model
     {
         return $this->belongsTo(User::class, 'customer_id');
     }
+
+    public function loaiphieu()
+    {
+        if($this->status =='returned')
+            return 'Phiếu trả hàng nhập';
+        if($this->status =='active')
+            return 'Phiếu nhập hàng';
+        return '';
+    }
+    public function details()
+    {
+        $doc_type = 'wo';
+        if($this->status == 'returned')
+            $doc_type = 'wor';
+        
+        $subquery = \App\Models\Product::select('id','title');
+        $details = \App\Models\WarehouseoutDetail::where('wo_id', $this->id)
+            ->where('doc_type', $doc_type)
+            ->where('is_deleted', 0)
+            ->joinSub($subquery, 'products', function ($join) {
+                $join->on('warehouseout_details.product_id', '=', 'products.id');
+            })
+            ->select(
+                'warehouseout_details.*', 
+                'products.title', 
+              
+            )
+            ->get();
+        foreach ($details as $wi )
+        {
+            $series = "";
+            $i = 0;
+            $wo_seris = \DB::select("select seri from warehouseout_detail_series where (doc_type='wo' or doc_type='wor') and wo_id =".$wi->wo_id ." and product_id = ".$wi->product_id );
+            foreach($wo_seris as $wo_seri)
+            {
+                if ($i > 0)
+                    $series .= ",";
+                $series .= $wo_seri->seri;
+                $i ++;
+            }
+            $wi->series = $series;
+        }
+        return $details;
+    }
+
     public static function log_change($warehouseout)
     {
         $data['outid'] = $warehouseout->id;

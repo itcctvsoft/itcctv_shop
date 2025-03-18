@@ -19,7 +19,33 @@ $app = new Illuminate\Foundation\Application(
     $_ENV['APP_BASE_PATH'] ?? dirname(__DIR__)
 );
 
- 
+$domain = $_SERVER['HTTP_HOST'];
+if ( $domain =='tanphat.net' ||$domain =='www.tanphat.net')
+{
+    $app->loadEnvironmentFrom('.env.tanphat');
+}
+else
+    if ( $domain =='tinhocbanme.com' ||$domain =='www.tinhocbanme.com')
+    {
+        $app->loadEnvironmentFrom('.env.banme');
+    }
+    else
+        if ( $domain =='congngherio.com' ||$domain =='www.congngherio.com')
+        {
+            $app->loadEnvironmentFrom('.env.congngherio');
+        }
+        else
+        {
+            if ( $domain =='demo1.itcctv-soft.com' ||$domain =='www.demo1.itcctv-soft.com')
+            {
+                $app->loadEnvironmentFrom('.env.demo');
+            }
+            else
+            {
+                $app->loadEnvironmentFrom('.env');
+            }
+
+        }
 
 
 /*

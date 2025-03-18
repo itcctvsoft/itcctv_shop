@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Models\UGroup;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\SupTransExport;
 class UserController extends Controller
 {
     /**
@@ -370,13 +372,26 @@ class UserController extends Controller
         {
             $active_menu="ctm_list";
             $searchdata =$request->datasearch;
-            $users = DB::table('users')->where('role','<>','admin')
+            // $users = DB::table('users')->where('role','<>','admin')->where('users.role','<>','soft')
+            // ->where(function($query) use ( $searchdata )
+            // {
+            //     $query->where('phone','LIKE','%'.$searchdata.'%')
+            //           ->orWhere('full_name','LIKE','%'.$searchdata.'%');
+            // })
+            // ->paginate($this->pagesize)->withQueryString();
+
+
+            $users=DB::table('users')->select('users.*','roles.title')
+            ->leftJoin(\DB::raw('(select * from roles) as roles'),'users.role','=','roles.alias')
+            ->where('users.role','<>','admin') ->where('users.role','<>','soft')
             ->where(function($query) use ( $searchdata )
             {
                 $query->where('phone','LIKE','%'.$searchdata.'%')
                       ->orWhere('full_name','LIKE','%'.$searchdata.'%');
             })
-            ->paginate($this->pagesize)->withQueryString();
+            ->paginate($this->pagesize);
+            
+
             // $query = "select * from users where role <>'admin' and (full_name like '%" 
             //             .$request->datasearch."%' or phone like '%".$request->datasearch."%')";
             // $users = DB::select($query)->paginate($this->pagesize)->withQueryString();;;
@@ -384,7 +399,7 @@ class UserController extends Controller
             <li class="breadcrumb-item"><a href="#">/</a></li>
             <li class="breadcrumb-item  " aria-current="page"><a href="'.route('user.index').'">Người dùng</a></li>
             <li class="breadcrumb-item active" aria-current="page"> tìm kiếm </li>';
-            return view('backend.users.search',compact('users','breadcrumb','searchdata','active_menu'));
+            return view('backend.users.index',compact('users','breadcrumb','searchdata','active_menu'));
         }
         else
         {
@@ -494,7 +509,7 @@ class UserController extends Controller
         }
        
     }
-    public function moneyUsershow($id)
+    public function moneyUserexp(Request $request,$id)
     {
         $func1 = "sup_edit";
         $func2 = "cus_edit";
@@ -503,20 +518,121 @@ class UserController extends Controller
             return redirect()->route('unauthorized');
         }
         //
-        $user = User::find($id);
-        if($user)
+       
+        
+        if (isset($request->date1)) {
+            $data['date1'] = trim($request->date1); 
+            $data['date1'] = str_replace('/', '-', $data['date1']); // Chuyển dấu "/" thành "-"
+            
+            // Chuyển đổi từ dd-mm-yyyy sang yyyy-mm-dd
+            $parts = explode('-', $data['date1']);
+            if (count($parts) === 3) {
+                $data['date1'] = "{$parts[2]}-{$parts[1]}-{$parts[0]}"; 
+            } else {
+                $data['date1'] = date("Y-m-d", strtotime("-12 month")); // Mặc định nếu lỗi
+            }
+        } else {
+            $data['date1'] = date("Y-m-d", strtotime("-12 month"));
+        }
+        
+        if (isset($request->date2)) {
+            $data['date2'] = trim($request->date2);
+            $data['date2'] = str_replace('/', '-', $data['date2']);
+            
+            $parts = explode('-', $data['date2']);
+            if (count($parts) === 3) {
+                $data['date2'] = "{$parts[2]}-{$parts[1]}-{$parts[0]}";
+            } else {
+                $data['date2'] = date("Y-m-d"); // Mặc định nếu lỗi
+            }
+        } else {
+            $data['date2'] = date("Y-m-d");
+        }
+
+        
+        $data['user'] = User::find($id);
+        if( $data['user'])
         {
-            $active_menu="user_add";
-            $breadcrumb = '
+            $data['active_menu']="user_add";
+            $data['breadcrumb'] = '
             <li class="breadcrumb-item"><a href="#">/</a></li>
             <li class="breadcrumb-item  " aria-current="page"><a href="'.route('user.index').'">Người dùng</a></li>
             <li class="breadcrumb-item active" aria-current="page"> xem công nợ </li>';
-            $suptrans = \App\Models\SupTransaction::where('supplier_id',$id)
-            ->where('is_delete',0)
-                ->orderBy('id','DESC')
-                ->paginate($this->pagesize*2)->withQueryString();;
-             
-            return view('backend.suptrans.show',compact('breadcrumb','active_menu','user','suptrans'));
+
+           
+            
+            $data['suptrans'] = \App\Models\SupTransaction::where('supplier_id', $id)
+            ->where('is_delete', 0)
+            ->whereRaw("DATEDIFF(created_at, ?) >= 0", [ $data['date1']])
+            ->whereRaw("DATEDIFF(created_at, ?) <= 0", [ $data['date2']])
+            ->orderBy('id', 'asc')
+            ->paginate($this->pagesize * 2)
+            ->withQueryString();
+            // dd($request->date1, $data['date1'],$data['date2'], $data['suptrans'] );
+            return \Maatwebsite\Excel\Facades\Excel::download(new SupTransExport( $data['suptrans'],$data['user']), 'baocao_congno_'. Str::slug($data['user']->full_name).'.xlsx');
+        }
+    }
+    public function moneyUsershow(Request $request,$id)
+    {
+        $func1 = "sup_edit";
+        $func2 = "cus_edit";
+        if(!$this->check_function($func1)  && !$this->check_function($func2))
+        {
+            return redirect()->route('unauthorized');
+        }
+        //
+       
+        
+        if (isset($request->date1)) {
+            $data['date1'] = trim($request->date1); 
+            $data['date1'] = str_replace('/', '-', $data['date1']); // Chuyển dấu "/" thành "-"
+            
+            // Chuyển đổi từ dd-mm-yyyy sang yyyy-mm-dd
+            $parts = explode('-', $data['date1']);
+            if (count($parts) === 3) {
+                $data['date1'] = "{$parts[2]}-{$parts[1]}-{$parts[0]}"; 
+            } else {
+                $data['date1'] = date("Y-m-d", strtotime("-12 month")); // Mặc định nếu lỗi
+            }
+        } else {
+            $data['date1'] = date("Y-m-d", strtotime("-12 month"));
+        }
+        
+        if (isset($request->date2)) {
+            $data['date2'] = trim($request->date2);
+            $data['date2'] = str_replace('/', '-', $data['date2']);
+            
+            $parts = explode('-', $data['date2']);
+            if (count($parts) === 3) {
+                $data['date2'] = "{$parts[2]}-{$parts[1]}-{$parts[0]}";
+            } else {
+                $data['date2'] = date("Y-m-d"); // Mặc định nếu lỗi
+            }
+        } else {
+            $data['date2'] = date("Y-m-d");
+        }
+
+        
+        $data['user'] = User::find($id);
+        if( $data['user'])
+        {
+            $data['active_menu']="user_add";
+            $data['breadcrumb'] = '
+            <li class="breadcrumb-item"><a href="#">/</a></li>
+            <li class="breadcrumb-item  " aria-current="page"><a href="'.route('user.index').'">Người dùng</a></li>
+            <li class="breadcrumb-item active" aria-current="page"> xem công nợ </li>';
+
+           
+            
+            $data['suptrans'] = \App\Models\SupTransaction::where('supplier_id', $id)
+            ->where('is_delete', 0)
+            ->whereRaw("DATEDIFF(created_at, ?) >= 0", [ $data['date1']])
+            ->whereRaw("DATEDIFF(created_at, ?) <= 0", [ $data['date2']])
+            ->orderBy('id', 'DESC')
+            ->paginate($this->pagesize * 2)
+            ->withQueryString();
+            // dd($request->date1, $data['date1'],$data['date2'], $data['suptrans'] );
+            return view('backend.suptrans.show', $data) ;
         }
     }
     public function moneyStoreToUser($id)

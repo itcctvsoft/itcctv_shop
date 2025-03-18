@@ -2,6 +2,9 @@
 @section('content')
 
 <div class="content">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
+
+
 @include('backend.layouts.notification')
     <h2 class="intro-y text-lg font-medium mt-10">
         Danh sách bán hàng
@@ -24,12 +27,10 @@
                                     <label style="min-width:80px" class="w-12 flex-none xl:w-auto xl:flex-initial mr-5">Lọc: </label>
                                          
                                         <div class="sm:flex items-center sm:mr-4 mt-2 xl:mt-0">
-                                        <input name="date1" value = "{{$date1}}" type="text" class="datepicker form-control w-56 block mx-auto" data-single-mode="true"> 
-                                         -  
-                                        <input name="date2" value ="{{$date2}}" type="text" class="datepicker form-control w-56 block mx-auto" data-single-mode="true"> 
-
-                                       
-                                            
+                                            <input type="text" id="date1" name = "date1"  placeholder="Chọn ngày">
+                                           -  
+                                            <input type="text" id="date2" name = "date2"  placeholder="Chọn ngày">
+                                        
                                             <input type="text" id='customer_search' 
                                                 class="form-control    " placeholder="Tên hoặc số điện thoại" value ="{{isset($customer_id)&& $customer_id > 0 && \App\Models\User::find($customer_id)?\App\Models\User::find($customer_id)->full_name:''}}">
                                             <input type="hidden" id="customer_id" name="customer_id" value="{{isset($customer_id)?$customer_id:0}}" />
@@ -240,8 +241,19 @@
  
 <link href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css" rel="Stylesheet"> 
 <script src="{{asset('backend/assets/js/product_selling.js')}}"></script> 
-<script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js" ></script>
 
+<script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js" ></script>
+{{-- <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script> --}}
+
+<script>
+   const myDatePicker =  new MyDatepicker("#date1");
+    myDatePicker.setDefaultDate("{{$date1}}");
+    const myDatePicker2 =  new MyDatepicker("#date2");
+    myDatePicker2.setDefaultDate("{{$date2}}");
+</script>
+
+ 
+  
 
 <script>
     $.ajaxSetup({

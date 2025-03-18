@@ -252,6 +252,8 @@ Route::group( ['prefix'=>'admin/','middleware'=>'auth' ],function(){
     Route::get('supplier_received/{id}',[\App\Http\Controllers\SupplierController::class,'supplierReceived'])->name('supplier.received');
     Route::get('moneyin/{id}',[\App\Http\Controllers\UserController::class,'moneyUserToStore'])->name('user.usertostore');
     Route::get('showsup/{id}',[\App\Http\Controllers\UserController::class,'moneyUsershow'])->name('user.showsup');
+    Route::get('expsup/{id}',[\App\Http\Controllers\UserController::class,'moneyUserexp'])->name('user.expsup');
+
     Route::post('user_store_save',[\App\Http\Controllers\UserController::class,'moneySaveUserToStore'])->name('user.saveusertostore');
     Route::get('moneyout/{id}',[\App\Http\Controllers\UserController::class,'moneyStoreToUser'])->name('user.storetouser');
     Route::post('store_user_save',[\App\Http\Controllers\UserController::class,'moneySaveStoreToUser'])->name('user.savestoretouser');

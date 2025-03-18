@@ -212,8 +212,8 @@
                 </form>
             </div>
          </div>
+    </div>
 </div>
-
 @endsection
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -222,6 +222,7 @@
 <link href="https://code.jquery.com/ui/1.12.0/themes/smoothness/jquery-ui.css" rel="Stylesheet"> 
 <script src="{{asset('backend/assets/js/product_v3.js')}}"></script> 
 <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js" ></script>
+
 <script>
     $.ajaxSetup({
         headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')}

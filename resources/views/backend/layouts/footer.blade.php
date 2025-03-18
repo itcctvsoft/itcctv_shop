@@ -10,6 +10,7 @@
         {{-- <script src="https://maps.googleapis.com/maps/api/js?key=["your-google-map-api"]&libraries=places"></script> --}}
         <script src="{{asset('backend/assets/dist/js/app2.js')}}"></script>
         <script src="{{asset('backend/assets/vendor/libs/jquery/jquery.js')}}"></script> 
+        <script src="https://itcctv-soft.s3.us-east-1.amazonaws.com/cdn/mydatepicker.js"></script> 
         <!-- END: JS Assets-->
        <script>
               function formatNumberS(input) {
