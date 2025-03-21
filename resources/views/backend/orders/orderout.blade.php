@@ -1,6 +1,6 @@
 @extends('backend.layouts.master')
 @section('content')
-<div class="content">
+            <div class="content">
                 <div class="intro-y flex flex-col sm:flex-row items-center mt-8">
                     <h2 class="text-lg font-medium mr-auto">
                         Lập phiếu bán hàng
@@ -106,27 +106,27 @@
                             
                         </div>
                         <div class="intro-y box mt-3  py-3 px-3">
-                            <div class="mt-3">
+                            <div class="mt-3" >
                                 <label style="min-width:50px  " class="form-select-label" for="">
                                 Số tiền thanh toán:
                                 </label>
                             </div>
                            
-                            <div class="mt-3"> 
+                            <div class="mt-3"  > 
                                 <label style="min-width:50px  " class="form-select-label" for="">
                                 Tiền giảm:
                                 </label>
                                 <input type="number" id='discount_amount'  value="{{$order->discount_amount}}"
                                 class="form-control py-3 mt-2 " placeholder="tiền giảm">
                             </div> 
-                            <div class ="mt-3">
+                            <div class ="mt-3"  >
                                 <label style="min-width:50px  " class="form-select-label" for="">
                                     Số tiền phải trả:
                                 </label>
                                 <span  id='sptotalcost' class="text-medium" >
                                 </span>
                             </div>
-                            <div class="mt-3">
+                            <div class="mt-3" style="display:none">
                                 <div class="mt-2">
                                     <div class="form-check form-switch"> <input id="check_paidall"  class="form-check-input" type="checkbox"> <label class="form-check-label" for="checkbox-switch-7">Đã thanh toán hết</label> </div>
                                 </div>
@@ -135,7 +135,7 @@
                                 class="form-control py-3 mt-2 " placeholder="số tiền đã thanh toán">
                                 <input type='hidden' value='0' id='totalcost'/>
                             </div>
-                            <div class="mt-3">
+                            <div class="mt-3" style="display:none">
                                 <label style="min-width:50px  " class="form-select-label" for="">
                                 Chọn tài khoản trả tiền
                                 </label>
@@ -168,7 +168,7 @@
                     </div>
                     <!-- END: Ticket -->
                 </div>
-                
+            </div>             
 @endsection
 @section ('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -203,7 +203,8 @@ $(document).ready(function(){ //Your code here
                     var newgroup = new Pricelist(groupprice.idg,groupprice.title,groupprice.price,groupprice.id);
                     plist.push(newgroup);
                 });//id,name, price,type, quantity,stock_quantity,url,pricelist
-                newpro = new Product(pitem.id,pitem.title, pitem.price,pitem.type,pitem.quantity,pitem.stock_qty,imageurls[0],plist);
+                // constructor(id,name, price,type, quantity,stock_quantity,url,seri,series,pricelist) {
+                newpro = new Product(pitem.id,pitem.title, pitem.price,pitem.type,pitem.quantity,pitem.stock_qty,imageurls[0],'','',plist);
                 productList.push(newpro);
             });
            console.log(productList);

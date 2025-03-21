@@ -65,6 +65,20 @@
                                                
                                    
                                     </div>
+                                    <h2>Phương thức thanh toán</h2>
+                                    <div id="payment_method" class="form-group col-md-12 col-sm-12 col-xs-12">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="payment_method" id="cod"
+                                                value="cod" checked>
+                                            <label class="form-check-label" for="cod"> &nbsp; Thanh toán sau khi nhận hàng
+                                                (COD)</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="payment_method" id="online"
+                                                value="online">
+                                            <label class="form-check-label" for="online"> &nbsp; Thanh toán online</label>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-lg-6 col-sm-12 col-xs-12">

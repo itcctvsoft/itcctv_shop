@@ -18,6 +18,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
 Route::group(['namespace' => 'Api', 'prefix' => 'v1'], function () {
+    Route::post('paymentorder_se', [\App\Http\Controllers\Frontend\PaymentController::class, 'paymentorder_se'])->middleware('passport.apikey');
     Route::post('login', [\App\Http\Controllers\Api\AuthenticationController::class, 'store']);
     Route::post('logout', [\App\Http\Controllers\Api\AuthenticationController::class, 'destroy'])->middleware('auth:api');
     Route::post('luubai', [\App\Http\Controllers\Api\BlogController::class, 'store'])->middleware('auth:api');

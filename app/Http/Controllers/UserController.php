@@ -503,7 +503,7 @@ class UserController extends Controller
             }
             ///create log /////////////
             $user = auth()->user();
-            $content = 'nộp tiền onlineonline';
+            $content = 'nộp tiền online';
             // \App\Models\Log::insertLog($content,$user->id);
             \App\Models\Log::insertLogNew($content, $subtrans->id, 'supwi', $user->id);
             return true;
@@ -578,17 +578,50 @@ class UserController extends Controller
     {
         $func1 = "sup_edit";
         $func2 = "cus_edit";
-        if (!$this->check_function($func1)  && !$this->check_function($func2)) {
+        if(!$this->check_function($func1)  && !$this->check_function($func2))
+        {
             return redirect()->route('unauthorized');
         }
         //
-        $user = User::find($id);
-        if($user)
+       
+        
+        if (isset($request->date1)) {
+            $data['date1'] = trim($request->date1); 
+            $data['date1'] = str_replace('/', '-', $data['date1']); // Chuyển dấu "/" thành "-"
+            
+            // Chuyển đổi từ dd-mm-yyyy sang yyyy-mm-dd
+            $parts = explode('-', $data['date1']);
+            if (count($parts) === 3) {
+                $data['date1'] = "{$parts[2]}-{$parts[1]}-{$parts[0]}"; 
+            } else {
+                $data['date1'] = date("Y-m-d", strtotime("-12 month")); // Mặc định nếu lỗi
+            }
+        } else {
+            $data['date1'] = date("Y-m-d", strtotime("-12 month"));
+        }
+        
+        if (isset($request->date2)) {
+            $data['date2'] = trim($request->date2);
+            $data['date2'] = str_replace('/', '-', $data['date2']);
+            
+            $parts = explode('-', $data['date2']);
+            if (count($parts) === 3) {
+                $data['date2'] = "{$parts[2]}-{$parts[1]}-{$parts[0]}";
+            } else {
+                $data['date2'] = date("Y-m-d"); // Mặc định nếu lỗi
+            }
+        } else {
+            $data['date2'] = date("Y-m-d");
+        }
+
+        
+        $data['user'] = User::find($id);
+        if( $data['user'])
         {
-            $active_menu="user_add";
-            $breadcrumb = '
+            $data['active_menu']="user_add";
+            $data['breadcrumb'] = '
             <li class="breadcrumb-item"><a href="#">/</a></li>
-            <li class="breadcrumb-item  " aria-current="page"><a href="' . route('user.index') . '">Người dùng</a></li>
+            <li class="breadcrumb-item  " aria-current="page"><a href="'.route('user.index').'">Người dùng</a></li>
             <li class="breadcrumb-item active" aria-current="page"> xem công nợ </li>';
 
            
@@ -597,10 +630,9 @@ class UserController extends Controller
             ->where('is_delete', 0)
             ->whereRaw("DATEDIFF(created_at, ?) >= 0", [ $data['date1']])
             ->whereRaw("DATEDIFF(created_at, ?) <= 0", [ $data['date2']])
-            ->orderBy('id', 'DESC')
+            ->orderBy('id', 'desc')
             ->paginate($this->pagesize * 2)
             ->withQueryString();
-            // dd($request->date1, $data['date1'],$data['date2'], $data['suptrans'] );
             return view('backend.suptrans.show', $data) ;
         }
     }

@@ -350,7 +350,9 @@ Route::group(['prefix' => 'admin/', 'middleware' => 'auth'], function () {
         Route::get('order_getProductList', [\App\Http\Controllers\OrderController::class, 'getProductList'])->name('order.getProductList');
         Route::get('order_out/{id}', [\App\Http\Controllers\OrderController::class, 'orderOut'])->name('order.out');
         Route::post('order_outupdate', [\App\Http\Controllers\OrderController::class, 'orderOutUpdate'])->name('order.outupdate');
-
+         
+        Route::post('order_thanhtoan/{id}', [\App\Http\Controllers\OrderController::class, 'orderThanhtoan'])->name('order.thanhtoan');
+       
         /// warehousetransfer section
         Route::resource('warehousetransfer', \App\Http\Controllers\WarehousetransferController::class);
         Route::get('warehousetrans_getProductList', [\App\Http\Controllers\WarehousetransferController::class, 'getProductList'])->name('warehousetrans.getProductList');
@@ -504,4 +506,5 @@ Route::prefix('payment')->group(function () {
     Route::match(['get', 'post'], '/online', [PaymentController::class, 'showOnlinePayment'])->name('payment.online');
     Route::post('/process', [PaymentController::class, 'processVnpayPayment'])->name('process_vnpay_payment');
     Route::get('/return', [PaymentController::class, 'vnpayReturn'])->name('vnpay_return');
+    Route::post('kiemtradon',[PaymentController::class,'paymentKiemtradon'])->name('payment.kiemtradon');
 });

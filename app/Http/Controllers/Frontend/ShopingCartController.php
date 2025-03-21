@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Auth;
 class ShopingCartController extends Controller
 {
     // Định nghĩa thuộc tính $front_view
-    protected $front_view = 'frontend_tp'; // Thay 'frontend_tp' bằng namespace thư mục view của bạn
+    // protected $front_view = 'frontend_tp'; // Thay 'frontend_tp' bằng namespace thư mục view của bạn
 
     public function viewCart()
     {
@@ -73,7 +73,7 @@ class ShopingCartController extends Controller
             : null;
 
         return view(
-            'frontend_tp.cart.checkout',
+            $this->front_view .'.cart.checkout',
             $data
         );
     }
@@ -104,7 +104,7 @@ class ShopingCartController extends Controller
             ->get();
 
         if ($cartItems->isEmpty()) {
-            return redirect()->route('front.cart.view')->with('error', 'Giỏ hàng trống.');
+            return redirect()->back()->with('error', 'Giỏ hàng trống.');
         }
 
         // Tính tổng giá trị đơn hàng
@@ -112,9 +112,10 @@ class ShopingCartController extends Controller
         foreach ($cartItems as $item) {
             $totalAmount += $item->quantity * $item->price;
         }
-
+     
         // Tạo đơn hàng
         $order = Order::create([
+           
             'customer_id' => $user->id,
             'vendor_id' => 0,
             'wh_id' => 0,
@@ -128,7 +129,10 @@ class ShopingCartController extends Controller
             'phone' => $request->phone ?? $user->phone,
             'address' => $request->address ?? '',
         ]);
-
+        $code ='ORD' . str_pad($order->id, 9, '0', STR_PAD_LEFT);
+        $order->code = $code;
+        $order->save();
+        
         // Tạo chi tiết đơn hàng
         foreach ($cartItems as $item) {
             OrderDetail::create([

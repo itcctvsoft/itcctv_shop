@@ -26,26 +26,35 @@
             <table class="table table-report -mt-2">
                 <thead>
                     <tr>
+                        <th class="whitespace-nowrap">MÃ</th>
                         <th class="whitespace-nowrap">KHÁCH HÀNG</th>
-                        <th class="whitespace-nowrap">KHO</th>
                         <th class="text-center whitespace-nowrap">SỐ TIỀN</th>
+                        <th class="text-center whitespace-nowrap">TRẠNG THÁI</th>
                         <th class="text-center whitespace-nowrap">NGÀY LẬP</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($orders as $item)
-                    
+                    <?php
+                        $class_p = "";
+                        if ($item->status == "Paid")
+                            $class_p = "text-danger";
+                        if ($item->status == "done")
+                            $class_p = "text-success";
+
+                    ?>
                     <tr class="intro-x ">
                         <td>
                             
-                           <a  href="{{route('order.show',$item->id)}}"> {{\App\Models\User::where('id',$item->customer_id)->value('full_name')}}
+                           <a  href="{{route('order.show',$item->id)}}"> 
+                            {{$item->code!= ''?$item->code : $item->id}}
                             </a>
                             
                         </td>
                         <td>
-                             
-                            {{\App\Models\Warehouse::where('id',$item->wh_id)->value('title')}}
+                            <a  class="tooltip "  title="Xem công nợ"  href="{{route('user.showsup',$item->customer_id)}}"> {{\App\Models\User::where('id',$item->customer_id)->value('full_name')}}
+                            </a>
                             
                         </td>
                         <td class="text-right">
@@ -53,7 +62,10 @@
                             {{ number_format($item->final_amount, 0, '.', ',');}}
                             
                         </td>
-                        
+                         
+                        <td >
+                         <span class="{{$class_p}}">   {{$item->status}} </span>
+                        </td>
                         <td>
                             {{$item->created_at}}
                         </td>
@@ -68,16 +80,24 @@
                                         
                                          
                                         <li><a href="{{route('order.show',$item->id)}}" class="dropdown-item flex items-center mr-3" href="javascript:;"> <i data-lucide="eye" class="w-4 h-4 mr-1"></i> Xem </a></li>
-                                        <li><a href="{{route('order.edit',$item->id)}}" class="dropdown-item flex items-center mr-3" href="javascript:;"> <i data-lucide="check-square" class="w-4 h-4 mr-1"></i> Edit </a></li>
-                                        <li><a href="{{route('order.out',$item->id)}}" class="dropdown-item flex items-center mr-3" href="javascript:;"> <i data-lucide="aperture" class="w-4 h-4 mr-1"></i> Chuyển phiếu bán</a></li>
-                                       
-                                        <li> 
-                                            <form action="{{route('order.destroy',$item->id)}}" method = "post">
-                                            @csrf
-                                            @method('delete')
-                                            <a class="dropdown-item flex items-center text-danger dltBtn" data-id="{{$item->id}}" href="javascript:;" data-tw-toggle="modal" data-tw-target="#delete-confirmation-modal"> <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i> Delete </a>
-                                            </form>
-                                        </li>
+                                        @if($item->status == 'pending' || $item->status == 'Paid')
+                                            <li><a href="{{route('order.edit',$item->id)}}" class="dropdown-item flex items-center mr-3" href="javascript:;"> <i data-lucide="check-square" class="w-4 h-4 mr-1"></i> Edit </a></li>
+                                            <li><a href="{{route('order.out',$item->id)}}" class="dropdown-item flex items-center mr-3" href="javascript:;"> <i data-lucide="aperture" class="w-4 h-4 mr-1"></i> Chuyển phiếu bán</a></li>
+                                            <li> 
+                                                <form action="{{route('order.thanhtoan',$item->id)}}" method = "post">
+                                                @csrf
+                                                
+                                                <a class="dropdown-item flex items-center text-success paymentbtn" data-id="{{$item->id}}" href="javascript:;"    > <i data-lucide="aperture" class="w-4 h-4 mr-1"></i>Thanh toán online</a>
+                                                </form>
+                                            </li>
+                                            <li> 
+                                                <form action="{{route('order.destroy',$item->id)}}" method = "post">
+                                                @csrf
+                                                @method('delete')
+                                                <a class="dropdown-item flex items-center text-danger dltBtn" data-id="{{$item->id}}" href="javascript:;"   > <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i> Delete </a>
+                                                </form>
+                                            </li>
+                                        @endif
                                          
                                 </div> 
                             </div> 
@@ -136,7 +156,31 @@
             }
         });
     });
-
+    $('.paymentbtn').click(function(e)
+    {
+        var form=$(this).closest('form');
+        var dataID = $(this).data('id');
+        e.preventDefault();
+        Swal.fire({
+            title: 'Bạn xác nhận hóa đơn đã thanh toán?',
+            text: "Số tiền sẽ được cập nhật vào công nợ khách hàng trước khi xuất đơn",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Vâng, tôi xác nhận!'
+            }).then((result) => {
+            if (result.isConfirmed) {
+                // alert(form);
+                form.submit();
+                // Swal.fire(
+                // 'Deleted!',
+                // 'Your file has been deleted.',
+                // 'success'
+                // );
+            }
+        });
+    });
     
 </script>
 <script>
