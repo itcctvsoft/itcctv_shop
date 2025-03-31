@@ -157,6 +157,34 @@
                     background-color: {{env('THEME_COLOR')}} !important;
                 }
         @endif
+
+
+        .cart-product {
+            display: flex;
+            align-items: flex-start; /* hoặc center nếu muốn canh giữa theo chiều dọc */
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .cart-product-image {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            flex-shrink: 0; /* tránh bị co ảnh nếu nội dung dài */
+        }
+
+        .cart-product-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .cart-product-title {
+            margin: 0;
+            font-size: 14px;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+
     </style>
 @yield('css')
 @yield('scriptop')

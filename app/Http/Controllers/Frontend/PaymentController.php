@@ -6,7 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Order;
-use App\Models\Payment;
+ 
+use App\Models\PaymentTrans;
 use Illuminate\Support\Facades\DB;
 use App\Models\OrderTrans;
 
@@ -14,7 +15,7 @@ class PaymentController extends Controller
 {
     public function paymentKiemtradon(Request $request)
     {
-        $order  = OrderTrans::where('code',$request->code)->first();
+        $order  = OrderTrans::where('code',$request->code)->where('id',$request->id)->first();
         if($order)
             return response()->json(['payment_status' => $order->status ] );
         else
@@ -77,18 +78,60 @@ class PaymentController extends Controller
                         //tang tien quy cho khach hang
                         $userController = new \App\Http\Controllers\UserController();
                         $user_id = $order->customer_id;
-                        $userController->moneyUserpaymentOnline($user_id, $amount, 2);
+                        $userController->moneyUserpaymentOnline($user_id, $order_trans->price,  env('SEPAY_BANKNUM'));
                     }
                       
                  }
              }
              //cap nhat các goi cũ
-             MemberUser::where('end_date', '<', now())
-               ->update(['status' => 'expired']);
-            \DB::commit();
-            return response()->json(['success' => 'true 1' ] );
-        }
+           
          
+        }
+        else
+        {
+            if (preg_match('/BUD[0-9]+/', $request->content, $matches)) {
+                $result = $matches[0]; // Phần tách ra là ;BUD
+                
+                $data['transaction_content'] =  $result;
+                $data['reference_number'] = $request->referenceCode;
+                $data['body'] = $request->description;
+                $amount_in = 0;
+                $amount_out = 0;
+               
+                if($request->transferType == "in")
+                    $amount_in = $request->transferAmount;
+                else if($request->transferType == "out")
+                    $amount_out = $request->transferAmount;
+                $data['amount_in'] = $amount_in;
+                // echo $data['amount_in'];
+                $data['amount_out'] = $amount_out;
+              
+                PaymentTrans::create($data);
+                $order_trans = OrderTrans::where('code', $data['transaction_content'])
+                    ->where('status','Unpaid')->first();
+                if($order_trans && $order_trans->price == $data['amount_in'])
+                {
+                    // echo  $order->price;
+                    $order_trans->status = 'Paid';
+                    $order_trans->save();
+                    if($order_trans->item_code=='budget')
+                    {
+                       
+                        //tang tien quy cho khach hang
+                        $userController = new \App\Http\Controllers\UserController();
+                        $user_id = $order_trans->order_id;
+                        $userController->moneyUserpaymentOnline($user_id, $order_trans->price, env('SEPAY_BANKNUM'));
+                       
+                    }
+                   
+                }
+               
+            
+              
+            }
+        }
+        \DB::commit();
+        return response()->json(['success' => 'true 1' ] );
     }    
     public function paymentorder_se_id($order_id)
     {
@@ -100,26 +143,25 @@ class PaymentController extends Controller
             //tang tien quy cho khach hang
             $userController = new \App\Http\Controllers\UserController();
             $user_id = $order->customer_id;
-            $userController->moneyUserpaymentOnline($user_id, $order->final_amount, 2);
+            $userController->moneyUserpaymentOnline($user_id, $order->final_amount, env('SEPAY_BANKNUM'));
         }
         \DB::commit();
-    }    
-    public function showOnlinePayment(Request $request)
+    }  
+    
+    public function showBudgetPayment(Request $request )
     {
         // dd($this->front_view);
-        $amount = $request->input('amount', 0); // Tổng số tiền
+        $user = auth()->user();
+        $amount =  $user->budget; // Tổng số tiền
+        if($amount >= 0)
+        {
+            return redirect()->back()->with('success',"Bạn không cần thanh toán công nợ!");
+        }
+        $amount = - $amount ;
         $orderDescription = $request->input('order_desc', 'Không có mô tả'); // Mô tả đơn hàng
         // $orderId = uniqid(); // Tạo mã đơn hàng
-        $order_id = $request->order_id;
-        // $orderTrans = \App\Models\OrderTrans::create([
-        //     'code' => 'MEM' . str_pad($order_id, 9, '0', STR_PAD_LEFT),
-        //     'item_code' => 'product',
-        //     'order_id' => $order_id,
-        //     'price' => $amount,
-        //     'status' => 'UnPaid',
-        //     'created_at' => now(),
-        //     'updated_at' => now(),
-        // ]);
+        $order_id = $user->id;
+       
 
         $data['detail'] = \App\Models\SettingDetail::find(1);  
         $data['categories'] = \App\Models\Category::where('status','active')->where('parent_id',null)->get();
@@ -133,18 +175,62 @@ class PaymentController extends Controller
         array_push($data['links'],$link);
         
 
-        // return view($this->front_view.'.cart.online_payment', [
-        //     'totalAmount' => $amount,
-        //     'orderDescription' => $orderDescription,
-        //     'orderId' => $orderTrans->code,
-
-
-        // ]);
-
-        $order = OrderTrans::where('order_id',$order_id)->where('item_code','product')->first();
+        $order = OrderTrans::where('order_id',$order_id)->where('item_code','budget')
+        ->where('status','Unpaid')->orderBy('id','desc')->first();
         if(!$order)
         {
             
+            $order = OrderTrans::create([
+                'code' => 'BUD' . str_pad($order_id, 9, '0', STR_PAD_LEFT),
+                'item_code' => 'budget',
+                'order_id' => $order_id,
+                'price' => $amount,
+                'status' => 'Unpaid',
+            ]);
+        }
+        else
+        {
+            $order->price = $amount ;
+            $order->save();
+        }
+        // dd($order,$order->status !== 'UnPaid');
+        if($order->status !== 'Unpaid')
+        {
+            return redirect()->back()->with('error','Đơn hàng đã thanh toán!');
+        }
+        $data['orderDescription'] =  $orderDescription;
+        $data['totalAmount'] =  $amount;
+        $data['orderId'] =  $order->code;
+        $data['order'] = $order;
+        $data['user'] = $user;
+        return view($this->front_view.'.profile.online_paymentuser',$data);
+
+    }
+
+    public function showOnlinePayment(Request $request)
+    {
+        // dd($this->front_view);
+        $amount = $request->input('amount', 0); // Tổng số tiền
+        $orderDescription = $request->input('order_desc', 'Không có mô tả'); // Mô tả đơn hàng
+        // $orderId = uniqid(); // Tạo mã đơn hàng
+        $order_id = $request->order_id;
+
+        $data['detail'] = \App\Models\SettingDetail::find(1);  
+        $data['categories'] = \App\Models\Category::where('status','active')->where('parent_id',null)->get();
+        ///breadcrumb info
+        $data['pagetitle']="Thanh toán đơn hàng" ;
+        ///
+        $data['links']= array();
+        $link = new \App\Models\Links();
+        $link->title='Kết quả tìm kiếm';
+        $link->url='#';
+        array_push($data['links'],$link);
+ 
+        $order = OrderTrans::where('order_id',$order_id)->where('item_code','product')
+       ->orderBy('id','desc')->first();
+        // $order = OrderTrans::where('order_id',$order_id)->where('item_code','product')->first();
+        if(!$order)
+        {
             $order = OrderTrans::create([
                 'code' => 'MEM' . str_pad($order_id, 9, '0', STR_PAD_LEFT),
                 'item_code' => 'product',
@@ -277,7 +363,7 @@ class PaymentController extends Controller
                         //tang tien quy cho khach hang
                         $userController = new \App\Http\Controllers\UserController();
                         $user_id = $order->customer_id;
-                        $userController->moneyUserpaymentOnline($user_id, $amount, 2);
+                        $userController->moneyUserpaymentOnline($user_id, $amount, env('SEPAY_BANKNUM'));
                     }
                 }
 

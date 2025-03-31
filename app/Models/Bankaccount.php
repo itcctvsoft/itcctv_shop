@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Bankaccount extends Model
 {
     use HasFactory;
-    protected $fillable = ['title','banknumber','total','status' ];
+    protected $fillable = ['title','banknumber','bankname','accountname','total','is_default','status' ];
     public static function deleteBankaccount($id){
         $freetrans =  \App\Models\FreeTransaction::where('bank_id',$id)->get();
         $banktrans =  \App\Models\BankTransaction::where('bank_id',$id)->get();

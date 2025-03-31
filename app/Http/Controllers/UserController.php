@@ -456,7 +456,7 @@ class UserController extends Controller
         }
     }
 
-    public function moneyUserpaymentOnline($user_id, $amount,   $bank_id)
+    public function moneyUserpaymentOnline($user_id, $amount,   $bank_account)
     {
         // $func1 = "sup_edit";
         // $func2 = "cus_edit";
@@ -467,18 +467,21 @@ class UserController extends Controller
         //$user = auth()->user();
         $supplier = User::find($user_id);
         $user = $supplier;
-
+        \Log::info('$detail_in->benefit :'.$user->full_name );
         if ($supplier) {
             ///create paid transaction
 
-            $bankaccount = \App\Models\Bankaccount::find($bank_id);
+            $bankaccount = \App\Models\Bankaccount::where('banknumber',$bank_account)->first();
+            \Log::info('$bank_account :'.$bank_account );
+            \Log::info('$ $bankaccount->id :'.$bankaccount->id );
             if (!$bankaccount) {
                 return false;
             }
-
+            
+                    // \Log::info(" product_detail['price'] :".$product_detail['price'] );
             $content = "nop tien online";
 
-            $bank_doc = \App\Models\BankTransaction::insertBankTrans($user->id, $bank_id, 1, $supplier->id, 'si', $amount);
+            $bank_doc = \App\Models\BankTransaction::insertBankTrans($user->id, $bankaccount->id, 1, $supplier->id, 'si', $amount);
             $subtrans = \App\Models\SupTransaction::createSubTransContent($bank_doc->id, 'fi', 1, $amount, $supplier->id, $content);
             $bank_doc->doc_id =  $subtrans->id;
             $bank_doc->save();
@@ -502,9 +505,11 @@ class UserController extends Controller
                     break;
             }
             ///create log /////////////
-            $user = auth()->user();
+           
             $content = 'nộp tiền online';
             // \App\Models\Log::insertLog($content,$user->id);
+            \Log::info('$ $user->id :'.$user->id );
+            \Log::info('$ $subtrans->id :'.$subtrans->id );
             \App\Models\Log::insertLogNew($content, $subtrans->id, 'supwi', $user->id);
             return true;
         } else {
@@ -568,8 +573,7 @@ class UserController extends Controller
             ->whereRaw("DATEDIFF(created_at, ?) >= 0", [ $data['date1']])
             ->whereRaw("DATEDIFF(created_at, ?) <= 0", [ $data['date2']])
             ->orderBy('id', 'asc')
-            ->paginate($this->pagesize * 2)
-            ->withQueryString();
+            ->get();
             // dd($request->date1, $data['date1'],$data['date2'], $data['suptrans'] );
             return \Maatwebsite\Excel\Facades\Excel::download(new SupTransExport( $data['suptrans'],$data['user']), 'baocao_congno_'. Str::slug($data['user']->full_name).'.xlsx');
         }

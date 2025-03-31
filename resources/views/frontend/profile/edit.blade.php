@@ -33,9 +33,9 @@
                                 <li class="nav-item"><a  
                                         class="nav-link">SP Yêu thích</a></li>
                                 <li class="nav-item"><a  
-                                        class="nav-link">Đơn hàng</a></li>
+                                        class="nav-link" href="{{route('front.profile.order')}}">Đơn hàng</a></li>
                                 <li class="nav-item"><a  
-                                        class="nav-link">Công nợ</a></li>
+                                        class="nav-link" href="{{route('front.profile.order')}}">Công nợ</a></li>
                                 
                             </ul>
                         </div>

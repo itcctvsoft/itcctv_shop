@@ -14,8 +14,11 @@ return new class extends Migration
         Schema::create('bankaccounts', function (Blueprint $table) {
             $table->id();
             $table->string('title');
+            $table->string('accountname')->nullable();
+            $table->string('bankname')->nullable();
             $table->string('banknumber')->nullable();
             $table->BigInteger('total') ;
+            $table->boolean('is_default')->default(false);
             $table->enum('status',['active','inactive'])->default('active');
             $table->timestamps();
         });

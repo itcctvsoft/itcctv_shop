@@ -29,11 +29,12 @@
                 break;  
             ?>
                 <li> 
-                    <div class="media"> 
-                        <a href="#"><img alt="" class="me-3" src="{{$photos[0]}} "></a>
-                        <div class="media-body">  
-                            <a href="#">  <h4>{{$pro->title}}</h4>  </a> 
-                            <h4><span>{{$pro->quantity}} x  {{number_format($pro->price,0,".",",")}} </span></h4>
+                    <div class="cart-product">
+                        <img alt="" class="cart-product-image" src="{{ $photos[0] }}">
+                        
+                        <div class="cart-product-info">
+                            <a href="#"><h6 class="cart-product-title">{{ $pro->title }}</h6></a>
+                            <h6><span>{{ $pro->quantity }} x {{ number_format($pro->price, 0, ".", ",") }}</span></h6>
                         </div>
                     </div>  
                      

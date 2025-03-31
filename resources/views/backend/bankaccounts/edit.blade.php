@@ -20,7 +20,21 @@
                     </div>
                     <div class="mt-3">
                         <label for="regular-form-1" class="form-label">Số tài khoản</label>
-                        <input id="banknumber" name="banknumber" type="text" value="{{$bankaccount->banknumber}}" class="form-control" placeholder="title">
+                        <input id="banknumber" name="banknumber" type="text" value="{{$bankaccount->banknumber}}" class="form-control" placeholder="số tài khoản">
+                    </div>
+                    <div class="mt-3">
+                        <label for="regular-form-1" class="form-label">Tên tài khoản</label>
+                        <input id="accountname" name="accountname" type="text" value="{{$bankaccount->accountname}}" class="form-control" placeholder="tên tài khoản">
+                    </div>
+                    <div class="mt-3">
+                        <label for="regular-form-1" class="form-label">Tên ngân hàng</label>
+                        <input id="bankname" name="bankname" type="text" value="{{$bankaccount->bankname}}" class="form-control" placeholder="tên ngân hàng">
+                    </div>
+                    <div class="mt-3 form-check">
+                        <input class="form-check-input" type="checkbox" name="is_default" id="is_default" value="1" {{ old('is_default', $bankaccount->is_default ?? false) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="is_default">
+                            Đặt làm tài khoản mặc định
+                        </label>
                     </div>
                     <div class="mt-3">
                         <div class="flex flex-col sm:flex-row items-center">

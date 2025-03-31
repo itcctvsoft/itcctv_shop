@@ -22,9 +22,23 @@
                         <input id="banknumber" name="banknumber" type="text" class="form-control"  >
                     </div>
                     <div>
+                        <label for="regular-form-1" class="form-label">Tên tài khoản</label>
+                        <input id="accountname" name="accountname" type="text" class="form-control"  >
+                    </div>
+                    <div>
+                        <label for="regular-form-1" class="form-label">Tên ngân hàng</label>
+                        <input id="bankname" name="bankname" type="text" class="form-control"  >
+                    </div>
+                    <div>
                         <label for="regular-form-1" class="form-label">Số tiền ban đầu</label>
                         <input id="total" name="total" type="text" class="form-control" value="0" >
                         <div class="form-help text-warning " > * Kiểm tra lại số tiền ban đầu, sẽ không được chỉnh sửa sau khi lưu.</div>
+                    </div>
+                    <div class="mt-3 form-check">
+                        <input class="form-check-input" type="checkbox" name="is_default" id="is_default" value="1" {{ old('is_default' ) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="is_default">
+                            Đặt làm tài khoản mặc định
+                        </label>
                     </div>
                     <div class="mt-3">
                         <div class="flex flex-col sm:flex-row items-center">

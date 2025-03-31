@@ -86,7 +86,29 @@ class SettingController extends Controller
     }
     public function testApi()
     {
-      
+       
+        $user = \Auth::user(); // Hoặc lấy user theo ID
+        
+        // Tạo token
+        $token = $user->createToken('PermanentToken')->accessToken;
+        // Generate a new RSA key pair
+        // $res = openssl_pkey_new(array(
+        //     'private_key_bits' => 2048,  // Key size in bits
+        //     'private_key_type' => OPENSSL_KEYTYPE_RSA, // Algorithm to use
+        // ));
+
+        // // Extract the private key
+        // openssl_pkey_export($res, $privateKey);
+
+        // // Extract the public key
+        // $publicKey = openssl_pkey_get_details($res)['key'];
+        echo $token;
+        // $detail = \App\Models\SettingDetail::find(1);
+        // $detail->private_key = $token;
+        // $detail->public_key = '';
+        // $detail->save();
+        // return back()->with('success','Tạo key thành công!');
+    
     
     }
     public function view_brand()

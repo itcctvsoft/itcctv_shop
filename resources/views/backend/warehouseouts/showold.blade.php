@@ -98,10 +98,16 @@
                                         </td>
                                         <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="border-b dark:border-darkmode-400">
                                             <?php
-                                                $product= \App\Models\Product::find( $wi->product_id);
+                                              $product= \App\Models\Product::find( $wi->product_id);
+                                                // if($i == 5)
+                                                // {
+                                                  
+                                                //     dd($product,$wi);
+                                                // }
+                                               
                                             ?>
                                             <div class="  ">
-                                                <a  href="{{route('inventory.viewproduct',$product->id)}}" > 
+                                                <a  href="{{route('inventory.viewproduct',$wi->product_id)}}" > 
                                                     {{  $product-> title    }}
                                                 </a>
                                             </div>

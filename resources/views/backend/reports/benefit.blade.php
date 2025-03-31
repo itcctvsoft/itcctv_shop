@@ -149,7 +149,7 @@
                                             @if ($item->product_id != null)
                                                 <tr>
                                                     <td> {{$i}} </td>
-                                                    <td> <a   > {{$item->title}} </a></td>
+                                                    <td> <a  href="{{route('inventory.viewproduct',$item->product_id)}}" > {{$item->title}} </a></td>
                                                     <td><span  > {{number_format($item->quantity,0,".",",")}} </span> </td>
                                                     <td><span  > {{number_format($item->tongloinhuan,0,".",",")}} </span> </td>
                                                     

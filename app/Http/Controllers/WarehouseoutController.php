@@ -16,6 +16,7 @@ use App\Models\FreeTransaction;
 use App\Models\UGroup;
 use App\Models\User;
 use App\Models\InventoryDetail;
+use App\Models\OrderTrans;
 use Illuminate\Support\Facades\Log;
 class WarehouseoutController extends Controller
 {
@@ -532,6 +533,35 @@ class WarehouseoutController extends Controller
         $warehouseout = Warehouseout::find($id);
         if($warehouseout)
         {
+// ///////////them code de hien qr online //////////////////
+            $defaultbank = \App\Models\Bankaccount::where('is_default',1)->first();
+            $customer = User::find($warehouseout->customer_id);
+            $amount = $customer->budget;
+            $order = null;
+            if($amount <= 0 &&  $defaultbank )
+            {
+               
+                $amount = - $amount;
+                $order = OrderTrans::where('order_id',$warehouseout->customer_id)->where('item_code','budget')
+                ->where('status','Unpaid')->orderBy('id','desc')->first();
+                if(!$order)
+                {
+                    
+                    $order = OrderTrans::create([
+                        'code' => 'BUD' . str_pad($warehouseout->customer_id, 9, '0', STR_PAD_LEFT),
+                        'item_code' => 'budget',
+                        'order_id' => $warehouseout->customer_id,
+                        'price' => $amount,
+                        'status' => 'Unpaid',
+                    ]);
+                }
+                else
+                {
+                    $order->price = $amount ;
+                    $order->save();
+                }
+            }
+// ///////////them code de hien qr online //////////////////
             // $sup_trans = \App\Models\SupTransaction::where('doc_type','wo')->where('doc_id',$warehouseout->id)->first();
           
             // if ( $amount_after_trans == $amount_before_trans && $amount_after_trans > 0 )
@@ -604,7 +634,7 @@ class WarehouseoutController extends Controller
                     }
                    
                 }
-                return view('backend.warehouseouts.show',compact('breadcrumb','warehouseout','active_menu','wo_details','amount_after_trans','amount_before_trans','amount_before_paid','paid_amount','sum_return','return_wos'));
+                return view('backend.warehouseouts.show',compact('order','breadcrumb','warehouseout','active_menu','wo_details','amount_after_trans','amount_before_trans','amount_before_paid','paid_amount','sum_return','return_wos','defaultbank'));
             }
             else
             {
@@ -1648,6 +1678,37 @@ class WarehouseoutController extends Controller
     public function print_invoice($id)
     {
         $warehouseout = \App\Models\Warehouseout::find($id);
+        $warehouseout = Warehouseout::find($id);
+        
+// ///////////them code de hien qr online //////////////////
+            $defaultbank = \App\Models\Bankaccount::where('is_default',1)->first();
+            $customer = User::find($warehouseout->customer_id);
+            $order = null;
+            $amount = $customer->budget;
+            if($amount <= 0 &&  $defaultbank )
+            {
+               
+                $amount = - $amount;
+                $order = OrderTrans::where('order_id',$warehouseout->customer_id)->where('item_code','budget')
+                ->where('status','Unpaid')->orderBy('id','desc')->first();
+                if(!$order)
+                {
+                    
+                    $order = OrderTrans::create([
+                        'code' => 'BUD' . str_pad($warehouseout->customer_id, 9, '0', STR_PAD_LEFT),
+                        'item_code' => 'budget',
+                        'order_id' => $warehouseout->customer_id,
+                        'price' => $amount,
+                        'status' => 'Unpaid',
+                    ]);
+                }
+                else
+                {
+                    $order->price = $amount ;
+                    $order->save();
+                }
+            }
+// ///////////them code de hien qr online //////////////////
         $wo_details = \App\Models\WarehouseoutDetail::where('wo_id',$id)->where('doc_type','wo')
             ->where('is_deleted',0)->get();
         foreach($wo_details as $wi_detail)
@@ -1675,191 +1736,10 @@ class WarehouseoutController extends Controller
         $buyer =  \App\Models\User::find($warehouseout->customer_id);
         $amount_after_trans = $buyer->budget;
        
-        $html =  view('backend.warehouseouts.show_p',compact('warehouseout','wo_details','amount_before_paid','amount_before_trans','amount_after_trans'))->render();
+        $html =  view('backend.warehouseouts.show_p',compact('warehouseout','wo_details','amount_before_paid','amount_before_trans','amount_after_trans','defaultbank','order'))->render();
         return $html;
-        $html = '<div id="divprint" class="intro-y box overflow-hidden mt-5">
-        <div class="border-b border-slate-200/60 dark:border-darkmode-400 text-center sm:text-left">
-            <div class="px-1 py-2 sm:px-1 sm:py-2">
-                <table style="width: 100%">
-                    <tr>
-                        <td style="width: 50%; vertical-align:top" class="text-left">
-                        <div class="text-primary font-semibold text-2xl">PHIẾU BÁN HÀNG</div>
-                        <div class="mt-2"> Mã: <span class="">'.$warehousein->code.'</span> </div>
-                        <div class="mt-2"> Mã điện tử: <span class="">'.$warehousein->uiid .'</span> </div>
-                                
-                        <div class="mt-1">Ngày lập: '.$warehousein->created_at.'</div>
-                         
-                        </td>';
-                 
-                         $detail = \App\Models\SettingDetail::find(1);  
-                         $html .= '
-                        <td style="width: 50%; vertical-align:top" class="text-center">
-                        <div class="text-primary font-semibold text-2xl">'.$detail->company_name.'</div>
-                        <div class="mt-2">   ' .$detail->phone. '-'.$detail->address.'</span> </div>
-                        
-                        <style>
-                            .divclass {
-                            display: flex;
-                            justify-content: center;
-                            
-                            }
-                        </style>
-                        <div class="mt-1 justify-center divclass" style=" margin: auto;" >
-                                <img src="'.$detail->logo.'" style="width:50px;"> 
-                        </div>
-                        </td>
-                    </tr>
-                </table>
-                <table style="width: 100%">
-                    <tr>
-                        <td style="width: 50%" class="text-left">
-                        <div >
-                            <div class="text-base text-slate-500">Khách hàng</div>
-                                <div class="text-lg  text-primary mt-2">
-                                   '. \App\Models\User::where('id',$warehousein->customer_id)->value('full_name') .'
-                                </div>
-                                <div class="mt-1">'. \App\Models\User::where('id',$warehousein->customer_id)->value('phone'). '</div>
-                                <div class="mt-1">'. \App\Models\User::where('id',$warehousein->customer_id)->value('address'). '</div>
-                            </div>
-                        </td>
-                        <td class="text-right">
-                        <div  >
-                            <div class="text-base text-slate-500">Kho xuất hàng</div>
-                            <div class="text-lg  text-primary mt-2">
-                            '. \App\Models\Warehouse::where('id',$warehousein->wh_id)->value('title') .'
-                            </div>
-                            <div class="mt-1">' . \App\Models\User::where('id',$warehousein->vendor_id)->value('full_name') .
-
-                            '</div>
-                        </div>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-        <div class="px-1 py-2 sm:px-1 sm:py-2">
-            <div class="overflow-x-auto">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "> STT </th>
-                            <th style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="border-b-2 dark:border-darkmode-400 ">Hàng hóa</th>
-                            <th style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="border-b-2 dark:border-darkmode-400 text-right ">Số lượng</th>
-                            <th style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="border-b-2 dark:border-darkmode-400 text-right ">Đơn giá</th>
-                            <th style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="border-b-2 dark:border-darkmode-400 text-right ">Tổng</th>
-                        </tr>
-                    </thead>
-                    <tbody>';
-                         $i = 1; 
-                        foreach ($wi_details as $wi )
-                        {
-
-                           $html .= '
-                            <tr>
-                                <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "> 
-                                    '.$i.'
-                                </td>
-                                <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="border-b dark:border-darkmode-400">
-                                    <div class="  ">
-                                '. \App\Models\Product::where('id', $wi->product_id)->value('title')   .
-                                ' </div>
-                                </td>
-                                <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="text-right border-b dark:border-darkmode-400 ">
-                                    '. $wi->quantity .'
-                                </td>
-                                <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="text-right border-b dark:border-darkmode-400 ">
-                                    '. number_format($wi->price, 0, '.', ',') .'
-                                </td>
-                                <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="text-right border-b dark:border-darkmode-400   ">
-                                '. number_format(($wi->quantity*$wi->price), 0, '.', ','). '
-                                </td>
-                            </tr>';
-                            if ($wi->series != '')
-                                $html .= '<tr><td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; "></td><td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " colspan="4">số seri:'.$wi->series.'</td></tr>';
-                            $i++;
-                        }
-                        $html .= '  
-                       
-                    </tbody>
-                    <tfooter>
-                        <tr>
-                            <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " colspan="2">
-                                <span class=" "> 
-                                    Giảm giá:  '. number_format($warehousein->discount_amount, 0, '.', ',') .'
-                                </span> 
-                            </td>
-                            <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " colspan="2" class="text-right  ">
-                                Tổng:
-                            </td>
-                            <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="text-right ">
-                                '.number_format($warehousein->final_amount, 0, '.', ',') .'
-                            </td>
-                        </tr>
-                        <tr>
-                        <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="text-right" colspan="4">
-                            Nợ cũ:
-                        </td>
-                        
-                        <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="text-right  ">
-                            '.number_format(-1*($amount_before_trans), 0, '.', ',').'
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="text-right" colspan="4">
-                           Phải thanh toán:
-                        </td>
-                        
-                        <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="text-right  ">
-                            '.number_format(-1*($amount_before_paid ), 0, '.', ',').'
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="text-right" colspan="4">
-                           Đã thanh toán:
-                        </td>
-                        
-                        <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="text-right  ">
-                            '.number_format($paid_amount, 0, '.', ',') .'
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="text-right" colspan="4">
-                           Nợ hiện tại:
-                        </td>
-                        
-                        <td style="padding:2px !important; padding-top:6px !important; padding-bottom:6px !important; " class="text-right ">
-                            '.number_format(-1*($amount_after_trans ), 0, '.', ',').'
-                        </td>
-                    </tr>
-                    </tfooter>
-                </table>
-            </div>
-        </div>
-        <div class="px-1 py-2 sm:px-1 sm:py-2">
-            <table style="width:100%">
-                <tr>
-                    <td style="width:50%">
-                        <div class="text-center sm:text-left mt-1 sm:mt-0">
-                            <div class="text-base  ">Người lập</div>
-                            <div class="mt-1">
-                                
-                                <br/>'.
-                             \App\Models\User::where('id',auth()->user()->id)->value('full_name').'
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        <div class="text-center sm:text-right sm:ml-auto" >
-                            <div class="text-base  "> </div>
-                            <div class="text-xl text-primary  mt-1">  </div>
-                        </div>
-                        
-                    </td>
-                </tr>
-                </table>
-            </div>
-        </div>';
-        return $html;
+       
+        
     }
     public function warehouseoutReturnNew(Request $request )
     {

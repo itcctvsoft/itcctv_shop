@@ -24,7 +24,11 @@
                     <tr>
                         <th class="whitespace-nowrap">TÊN</th>
                         <th class="whitespace-nowrap">SỐ TÀI KHOẢN</th>
+                        <th class="whitespace-nowrap">TÊN TÀI KHOẢN</th>
+                        <th class="whitespace-nowrap">NGÂN HÀNG</th>
                         <th class="text-center whitespace-nowrap">TỔNG TIỀN</th>
+                        <th class="text-center whitespace-nowrap">TỔNG TIỀN</th>
+                        <th class="text-center whitespace-nowrap">MẶC ĐỊNH</th>
                         <th class="text-center whitespace-nowrap">TRẠNG THÁI</th>
                         <th></th>
                     </tr>
@@ -39,8 +43,21 @@
                            {{$item->banknumber}} 
                         </td>
                         <td>
+                            {{ $item->accountname }} 
+                         </td>
+                         <td>
+                            {{ $item->bankname }} 
+                         </td>
+                        <td>
                            {{number_format($item->total, 0, '.', ',')}} 
                         </td>
+                        <td>
+                            @if ($item->is_default)
+                                <span style="color: green; font-weight: bold;">Mặc định</span>
+                            @else
+                                <span style="color: gray;">Không</span>
+                            @endif
+                         </td>
                         <td class="text-center"> 
                             <input type="checkbox" 
                             data-toggle="switchbutton" 

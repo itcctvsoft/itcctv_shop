@@ -60,35 +60,43 @@ class BankController extends Controller
     public function store(Request $request)
     {
         $func = "bank_add";
-        if(!$this->check_function($func))
-        {
+        if (!$this->check_function($func)) {
             return redirect()->route('unauthorized');
         }
-        //
-          // return $request->all();
-          $this->validate($request,[
-            'title'=>'string|required',
-            'banknumber'=>'string|nullable',
-            'status'=>'required|in:active,inactive',
-            'total'=>'numeric|required',
+    
+        // Validate
+        $this->validate($request, [
+            'title' => 'string|required',
+            'banknumber' => 'string|nullable',
+            'status' => 'required|in:active,inactive',
+            'total' => 'numeric|required',
         ]);
+    
+        // Xử lý checkbox
+        $isDefault = $request->has('is_default') ? 1 : 0;
+    
         $data = $request->all();
-        // $data ['total'] = 0;
-        
-        $status = Bankaccount::create($data);
-        if($status){
-            $user = auth()->user();
-            $content = 'tạo tài khoản '.$data['title'] ;
-            \App\Models\Log::insertLogNew($content,$status->id,'bcreate',$user->id);
-          
-
-            return redirect()->route('bankaccount.index')->with('success','Tạo bankaccount thành công!');
+        $data['is_default'] = $isDefault;
+    
+        // Nếu chọn is_default thì update các cái khác về 0
+        if ($isDefault) {
+            Bankaccount::where('is_default', 1)->update(['is_default' => 0]);
         }
-        else
-        {
-            return back()->with('error','Something went wrong!');
-        }    
+    
+        // Tạo tài khoản
+        $status = Bankaccount::create($data);
+    
+        if ($status) {
+            $user = auth()->user();
+            $content = 'Tạo tài khoản ' . $data['title'];
+            \App\Models\Log::insertLogNew($content, $status->id, 'bcreate', $user->id);
+    
+            return redirect()->route('bankaccount.index')->with('success', 'Tạo bankaccount thành công!');
+        } else {
+            return back()->with('error', 'Something went wrong!');
+        }
     }
+    
 
     /**
      * Display the specified resource.
@@ -132,38 +140,45 @@ class BankController extends Controller
     public function update(Request $request, string $id)
     {
         $func = "bank_edit";
-        if(!$this->check_function($func))
-        {
+        if (!$this->check_function($func)) {
             return redirect()->route('unauthorized');
         }
-        //
+
         $bankaccount = Bankaccount::find($id);
-        if($bankaccount)
-        {
-            $this->validate($request,[
-                'title'=>'string|required',
-                'banknumber'=>'string|nullable',
-                'status'=>'required|in:active,inactive',
-            ]);
-            $data = $request->all();
-            $status = $bankaccount->fill($data)->save();
-            if($status){
-                // $content = 'edit bankaccount title: '.$data['title'] ;
-                $user = auth()->user();
-                // \App\Models\Log::insertLog($content,$user->id);
-                $content = 'điều chỉnh thông tin tài khoản' ;
-                \App\Models\Log::insertLogNew($content, $bankaccount->id,'bedit',$user->id);
-              
-                return redirect()->route('bankaccount.index')->with('success','Cập nhật thành công');
-            }
-            else
-            {
-                return back()->with('error','Something went wrong!');
-            }    
+        if (!$bankaccount) {
+            return back()->with('error', 'Không tìm thấy dữ liệu');
         }
-        else
-        {
-            return back()->with('error','Không tìm thấy dữ liệu');
+
+        $this->validate($request, [
+            'title' => 'string|required',
+            'banknumber' => 'string|nullable',
+            'accountname' => 'string|nullable',
+            'status' => 'required|in:active,inactive',
+        ]);
+
+        // Lấy dữ liệu
+        $data = $request->all();
+        $isDefault = $request->has('is_default') ? 1 : 0;
+        $data['is_default'] = $isDefault;
+
+        // Nếu tài khoản được chọn là mặc định, cập nhật các tài khoản khác thành không mặc định
+        if ($isDefault) {
+            // Nếu bạn có cột user_id thì nên dùng thêm điều kiện:
+            // Bankaccount::where('user_id', auth()->id())->where('id', '!=', $id)->update(['is_default' => 0]);
+            Bankaccount::where('id', '!=', $id)->update(['is_default' => 0]);
+        }
+
+        // Cập nhật tài khoản
+        $status = $bankaccount->fill($data)->save();
+
+        if ($status) {
+            $user = auth()->user();
+            $content = 'Điều chỉnh thông tin tài khoản';
+            \App\Models\Log::insertLogNew($content, $bankaccount->id, 'bedit', $user->id);
+
+            return redirect()->route('bankaccount.index')->with('success', 'Cập nhật thành công');
+        } else {
+            return back()->with('error', 'Có lỗi xảy ra!');
         }
     }
 

@@ -1,7 +1,9 @@
 @extends('backend.layouts.master')
 @section('content')
 
+
 <div class="content">
+    @include('backend.layouts.notification')
     <h2 class="intro-y text-lg font-medium mt-10">
         Kết quả tìm kiếm hàng hóa
     </h2>

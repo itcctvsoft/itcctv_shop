@@ -1,4 +1,4 @@
-<div id="divprint" class="intro-y box overflow-hidden  px-10">
+<div id="divprint" class="intro-y box overflow-hidden  ">
                     <div class="border-b border-slate-200/60 dark:border-darkmode-400 text-center sm:text-left">
                         <div class="px-1 py-5 sm:px-1 sm:py-2">
                             <style>
@@ -87,7 +87,7 @@
                             </div>
                             <div style="text-align:center " class=" mt-6  customer_tel_p">SĐT: {{\App\Models\User::where('id',$warehouseout->customer_id)->value('phone')}}</div>
                             <div style="text-align:center " class=" mt-4 telephone-number_p">Địa chỉ: {{\App\Models\User::where('id',$warehouseout->customer_id)->value('address')}}</div>
-                            
+                           
                              
                            
                             
@@ -207,7 +207,7 @@
                     <div class="px-1 py-2 sm:px-1 sm:py-2">
                         <table style="width:100%">
                             <tr>
-                                <td style="width:50%">
+                                <td class='align-top' >
                                     <div class="text-center sm:text-left mt-1 sm:mt-0">
                                         <div class="text-base text-slate-500">Người lập</div>
                                         <div class="mt-1">
@@ -218,17 +218,44 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td>
+                                <td class='align-top'>
                                     <div class="text-center sm:text-right sm:ml-auto" >
                                         <div class="text-base text-slate-500"> Đơn vị vận chuyển </div>
-                                            <div class="text-xl text-primary font-medium mt-1">
-                                               {{$warehouseout->delivery_id? \App\Models\User::find($warehouseout->delivery_id)->full_name:''}}
+                                        <div class="text-xl text-primary font-medium mt-1">
+                                            {{$warehouseout->delivery_id? \App\Models\User::find($warehouseout->delivery_id)->full_name:''}}
 
-                                            </div>
-                                        
                                         </div>
+                                        
+                                    </div>
+                                    
                                 
                                 </td>
+                                <td class='align-top'>
+                                    <div class="text-center sm:text-right sm:ml-auto" >
+                                        <div class="text-base text-slate-500"> Thanh toán đơn hàng </div>
+                                        
+                                        @if($defaultbank)
+                                        <div style=" left:0px; border: 0px  ; padding: 0px; display: inline-block;  ">
+                                            <img src="https://qr.sepay.vn/img?acc={{$defaultbank->banknumber}}&bank={{$defaultbank->bankname}}&amount={{$warehouseout->final_amount}}&des={{$warehouseout->code}}&template=compact&download=true" 
+                                            alt="QR Code" style="width: 120px; height: auto;">
+                                            {{-- <span style="padding-left:10px">{{$defaultbank->accountname}}</span> --}}
+                                        </div>
+                                        @endif
+                                    </div>
+                                </td>
+                                <td class='align-top'>
+                                    <div class="text-center sm:text-right sm:ml-auto" >
+                                        <div class="text-base text-slate-500"> Thanh toán công nợ </div>
+                                        @if($order && $defaultbank)
+                                        <div style=" left:0px; border: 0px  ; padding: 0px; display: inline-block;  ">
+                                            <img src="https://qr.sepay.vn/img?acc={{$defaultbank->banknumber}}&bank={{$defaultbank->bankname}}&amount={{$order->price}}&des={{$order->code}}&template=compact&download=true" 
+                                            alt="QR Code" style="width: 120px; height: auto;">
+                                            {{-- <span style="padding-left:10px">{{$defaultbank->accountname}}</span> --}}
+                                        </div>
+                                        @endif
+                                    </div>
+                                </td>
+                               
                             </tr>
                         </table>
                     </div>

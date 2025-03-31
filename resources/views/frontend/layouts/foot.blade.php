@@ -2173,7 +2173,53 @@ $('.add-extent .animated-btn').on('click', function (e) {
             data: JSON.stringify(dataToSend),
             success: function(response) {
                 var msg = response.msg;
+                console.log(msg);
                 add_notify(response.msg,response.status);
+                var return_pros = response.products;
+                console.log(return_pros);
+                //modify head shopingcart
+                var innerhtml = "";
+                var total = 0;
+                var dem = 0;
+                if(!return_pros)
+                    return;
+                $('#cart_qty_cls').html(return_pros.length);
+                console.log(return_pros.length);
+                console.log('het');
+                while (dem < 5)
+                {
+                   var pp = return_pros[dem];
+                   console.log(dem);
+                   if(pp)
+                   {
+                     
+                    console.log(pp);
+                        var imageurls = (typeof pp.photo === 'string' && pp.photo.trim() !== '') 
+                        ? pp.photo.split(",") 
+                        : [];
+                        innerhtml += '<li> <div class="cart-product">  <img alt="" class="cart-product-image"  '
+                        +'    src="'+(imageurls.length >0? imageurls[0]:"")+'"> <div class="cart-product-info">  <a href="#">  <h6 class="cart-product-title"> '+pp.title+' '
+                        +' </h6></a> <h6><span>'+pp.quantity+' x ' 
+                        + Intl.NumberFormat().format(pp.price)
+                        +'</span></h6>  </div> </div>   </li>';
+                        total += pp.price*pp.quantity;
+                    }  
+                    
+                    dem += 1;
+                }
+               
+                while (dem < return_pros.length)
+                {
+                    total +=  return_pros[dem].price*return_pros[dem].quantity;
+                    dem++;
+                }
+                innerhtml  +=' <li>  <div class="total">  <h5>Tổng : <span>'
+                  + Intl.NumberFormat().format(total)+'</span></h5>'
+                    +'   </div>  </li>  <li>  <div class="buttons"><a href="'+'{{route("front.shopingcart.view")}}'+'" class="view-cart">'
+                    +'xem giỏ hàng</a> <a href="'+'{{route("front.shopingcart.checkout")}}'+'" class="checkout">Mua hàng</a></div>  </li>';
+                // console.log(innerhtml);
+                $('#head_shoping_cart').html(innerhtml);
+
             },
             error: function(error) {
             console.error("Error add to addtocart:", error);
@@ -2182,6 +2228,7 @@ $('.add-extent .animated-btn').on('click', function (e) {
     });
     $('.product-box button .ti-shopping-cart').on('click', function () {
         var data_send = new Sanpham($(this).attr("data-id"),1);
+        console.log('gg');
         console.log(data_send);
         const dataToSend = {
             _token: "{{ csrf_token() }}",
@@ -2194,9 +2241,10 @@ $('.add-extent .animated-btn').on('click', function (e) {
             data: JSON.stringify(dataToSend),
             success: function(response) {
                 var msg = response.msg;
+                console.log(msg);
                 add_notify(response.msg,response.status);
                 var return_pros = response.products;
-                // console.log(return_pros);
+                console.log(return_pros);
                 //modify head shopingcart
                 var innerhtml = "";
                 var total = 0;
@@ -2204,23 +2252,30 @@ $('.add-extent .animated-btn').on('click', function (e) {
                 if(!return_pros)
                     return;
                 $('#cart_qty_cls').html(return_pros.length);
+                console.log(return_pros.length);
+                console.log('het');
                 while (dem < 5)
                 {
                    var pp = return_pros[dem];
-                    var imageurls = pp.photo.split(",");
-                    innerhtml += '<li> <div class="media"> <a href="#"><img alt="" class="me-3" '
-                    +'    src="'+(imageurls.length >0? imageurls[0]:"")+'"></a>  <div class="media-body">  <a href="#">  <h4>'+pp.title+'</h4> '
-                    +'</a>  <h4><span>'+pp.quantity+' x ' 
-                    + Intl.NumberFormat().format(pp.price)
-                    +'</span></h4>  </div> </div>   </li>';
-                    total += pp.price*pp.quantity;
+                   console.log(dem);
+                   if(pp)
+                   {
+                     
+                    console.log(pp);
+                        var imageurls = (typeof pp.photo === 'string' && pp.photo.trim() !== '') 
+                        ? pp.photo.split(",") 
+                        : [];
+                        innerhtml += '<li> <div class="cart-product">  <img alt="" class="cart-product-image"  '
+                        +'    src="'+(imageurls.length >0? imageurls[0]:"")+'"> <div class="cart-product-info">  <a href="#">  <h6 class="cart-product-title">'+pp.title+' '
+                        +' </h6> </a><h6><span>'+pp.quantity+' x ' 
+                        + Intl.NumberFormat().format(pp.price)
+                        +'</span></h6>  </div> </div>   </li>';
+                        total += pp.price*pp.quantity;
+                    }  
+                    
                     dem += 1;
-                    if(dem == 10 && return_pros.length > 10)
-                    {
-                        innerhtml += '<li>   <a href="#"> Xem thêm ...  </a>    </li>';
-                         
-                    }
                 }
+               
                 while (dem < return_pros.length)
                 {
                     total +=  return_pros[dem].price*return_pros[dem].quantity;
@@ -2230,6 +2285,7 @@ $('.add-extent .animated-btn').on('click', function (e) {
                   + Intl.NumberFormat().format(total)+'</span></h5>'
                     +'   </div>  </li>  <li>  <div class="buttons"><a href="'+'{{route("front.shopingcart.view")}}'+'" class="view-cart">'
                     +'xem giỏ hàng</a> <a href="'+'{{route("front.shopingcart.checkout")}}'+'" class="checkout">Mua hàng</a></div>  </li>';
+                // console.log(innerhtml);
                 $('#head_shoping_cart').html(innerhtml);
 
             },

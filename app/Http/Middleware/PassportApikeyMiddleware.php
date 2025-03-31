@@ -12,13 +12,16 @@ class PassportApikeyMiddleware
     {
         // Lấy Authorization header
         $authorizationHeader = $request->header('Authorization');
-
+        \Log::info('Authorization header converted', [$authorizationHeader]);
         // Nếu header bắt đầu bằng "Apikey ", thay thế bằng "Bearer "
         if ($authorizationHeader && str_starts_with($authorizationHeader, 'Apikey ')) {
             $newAuthorizationHeader = str_replace('Apikey ', 'Bearer ', $authorizationHeader);
             $request->headers->set('Authorization', $newAuthorizationHeader);
+            \Log::info('Authorization header converted', [$newAuthorizationHeader]);
         }
-
-        return $next($request);
+        if (\Auth::guard('api')->check()) {
+            return $next($request);
+        }
+        return response()->json(['message' => 'Unauthorized'], 401);
     }
 }

@@ -66,7 +66,7 @@ class InventoryDetail extends Model
         }
         if($this->doc_type == 'din')
         {
-            $wi = \App\Models\Din::find($this->doc_id);
+            $wi = \App\Models\DIn::find($this->doc_id);
             return $wi;
         }
         if($this->doc_type == 'dout')

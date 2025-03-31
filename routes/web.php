@@ -54,6 +54,12 @@ Route::post('front/profile/updatetax', [App\Http\Controllers\Frontend\ProfileCon
 Route::post('front/profile/updatedescription', [App\Http\Controllers\Frontend\ProfileController::class, 'updateDescription'])->name('front.profile.updatedescription');
 Route::post('front/profile/updatename', [App\Http\Controllers\Frontend\ProfileController::class, 'updateName'])->name('front.profile.updatename');
 Route::get('front/profile/order', [App\Http\Controllers\Frontend\ProfileController::class, 'viewOrder'])->name('front.profile.order');
+Route::get('front/profile/warehouseout', [App\Http\Controllers\Frontend\ProfileController::class, 'viewWarehouseout'])->name('front.profile.warehouseout');
+Route::get('front/profile/viewsuptrans', [App\Http\Controllers\Frontend\ProfileController::class, 'viewsuptrans'])->name('front.profile.viewsuptrans');
+Route::get('front/profile/paymentonline', [App\Http\Controllers\Frontend\PaymentController::class, 'showBudgetPayment'])->name('front.profile.paymentonline');
+
+
+
 Route::get('front/profile/addressbook', [App\Http\Controllers\Frontend\ProfileController::class, 'addressbook'])->name('front.profile.addressbook');
 Route::post('front/profile/update', [App\Http\Controllers\Frontend\ProfileController::class, 'updateProfile'])->name('front.profile.update');
 Route::post('avatar-upload', [\App\Http\Controllers\Frontend\FilesController::class, 'avartarUpload'])->name('front.upload.avatar');
@@ -339,7 +345,7 @@ Route::group(['prefix' => 'admin/', 'middleware' => 'auth'], function () {
         Route::post('setting_kiemtracongno', [\App\Http\Controllers\SettingController::class, 'kiemtracongno'])->name('setting.kiemtracongno');
         Route::post('setting_cnsp_brand', [\App\Http\Controllers\SettingController::class, 'nhap_san_pham_brand'])->name('setting.cnsp_brand');
         Route::post('setting_getbrand', [\App\Http\Controllers\SettingController::class, 'view_brand'])->name('setting.getbrand');
-        Route::post('setting_testapi', [\App\Http\Controllers\SettingController::class, 'testApi'])->name('setting.testapi');
+        Route::post('setting_generatekey', [\App\Http\Controllers\SettingController::class, 'testApi'])->name('setting.generatekey');
         Route::post('setting_updateversion12', [\App\Http\Controllers\SettingController::class, 'updateVersion12'])->name('setting.updateversion12');
 
 

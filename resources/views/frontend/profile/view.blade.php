@@ -10,38 +10,11 @@
         <div class="container">
             <div class="row">
                 <!-- left side bar -->
-                <div class="col-lg-3">
-                    <div class="dashboard-sidebar">
-                        <div class="profile-top">
-                            <div class="profile-image">
-                                <img src="{{isset($profile->photo)?$profile->photo:asset('frontend/assets/images/avtar.jpg')}}" alt="" class="img-fluid">
-                            </div>
-                            <div class="profile-detail">
-                                
-                                <h5>{{$profile->full_name}}</h5>
-                                <h6>{{$profile->email}}</h6>
-                            </div>
-                        </div>
-                        <div class="faq-tab">
-                            <ul class="nav nav-tabs" id="top-tab" role="tablist">
-                                <li class="nav-item"><a  
-                                        class="nav-link active">Thông tin tài khoản</a></li>
-                                        <li class="nav-item"><a  href="{{route('front.shopingcart.view')}}"
-                                        class="nav-link">Giỏ hàng</a></li>
-                                        <li class="nav-item"><a  href="{{route('front.profile.addressbook')}}"
-                                        class="nav-link">Danh sách địa chỉ</a></li>
-                                
-                                <li class="nav-item"><a  href="{{route('front.wishlist.view')}}"
-                                        class="nav-link">SP Yêu thích</a></li>
-                                <li class="nav-item"><a  
-                                        class="nav-link">Đơn hàng</a></li>
-                                <li class="nav-item"><a  
-                                        class="nav-link">Công nợ</a></li>
-                                
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+                <?php
+                $menu = 1;
+                ?>
+
+            @include('frontend.profile.profilemenu')
                   <!-- left side bar -->
                   <!-- right side content -->
                 <div class="col-lg-9">
@@ -126,8 +99,8 @@
                                                                     data-bs-toggle="modal" class="bottom_btn">điều chỉnh</a>
                                            
                                         </div>
-                                        <div class="row">
-                                            <div class="col-sm-12">
+                                        <div class="row px-20">
+                                            <div class=" px-20 col-sm-12">
                                                 <h6>Tên công ty: <span> {{$profile->taxname}}   </span></h6> 
                                                 <h6>Mst: <span> {{$profile->taxcode}}</span></h6> 
                                                 <h6>Địa chỉ: <span> {{$profile->taxaddress}} </span></h6> 
@@ -145,9 +118,9 @@
                                                 <h5>Địa chỉ nhận hàng</h5>
                                                 @if ($defaut_setting && isset($invoiceaddress))
                                                 <div class="px-20">  
-                                                    <h6> {{$invoiceaddress->full_name}} </j6>
-                                                    <h6> {{$invoiceaddress->phone}} </j6>
-                                                    <h6> {{$invoiceaddress->address}} </j6>
+                                                    <h6> {{$invoiceaddress->full_name}} </h6>
+                                                    <h6> {{$invoiceaddress->phone}} </h6>
+                                                    <h6> {{$invoiceaddress->address}} </h6>
                                                 </div>
                                                 @else
                                                 <a href="javascript:void(0)"
@@ -160,9 +133,9 @@
                                                 <h5>Địa chỉ nhận hóa đơn</h5>
                                                 @if ($defaut_setting && isset($shipaddress))
                                                 <div  class="px-10">  
-                                                    <h6> {{$shipaddress->full_name}} </j6>
-                                                    <h6> {{$shipaddress->phone}} </j6>
-                                                    <h6> {{$shipaddress->address}} </j6>
+                                                    <h6> {{$shipaddress->full_name}} </h6>
+                                                    <h6> {{$shipaddress->phone}} </h6>
+                                                    <h6> {{$shipaddress->address}} </h6>
                                                 </div>
                                                 @else
                                                 <a href="javascript:void(0)"

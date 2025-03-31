@@ -7,7 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
-
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\SupTransExport;
 class ProfileController extends  Controller
 {
     //
@@ -72,9 +73,16 @@ class ProfileController extends  Controller
         $sql_total_wishlist = "select count(id) as total from wishlists where user_id = " . $user->id . "    ";
         $data['totalwishlist']  = DB::select($sql_total_wishlist)[0]->total;
 
-        $sql  = "select  d.* from (SELECT * from wishlists where user_id = "
-            . $user->id . ") as c left join products as d on c.product_id = d.id where d.status = 'active'  ";
-        $data['products'] =   DB::select($sql);
+        // $sql  = "select  d.* from (SELECT * from wishlists where user_id = "
+        //     . $user->id . ") as c left join products as d on c.product_id = d.id where d.status = 'active'  ";
+        // $data['products'] =   DB::select($sql);
+        $data['products'] = DB::table('wishlists as c')
+            ->join('products as d', 'c.product_id', '=', 'd.id')
+            ->where('c.user_id', $user->id)
+            ->where('d.status', 'active')
+            ->select('d.*') // chọn tất cả trường của products
+            ->paginate(20); // mỗi trang 10 sản phẩm
+
         return view($this->front_view . '.profile.wishlist', $data);
     }
     //view addres book
@@ -366,14 +374,130 @@ class ProfileController extends  Controller
                 ->withError('Lỗi xãy ra');
         }
     }
+    public function paymentonline()
+    {
 
-    public function viewOrder()
+    }
+    public function moneyUserexp(Request $request )
+    {
+        $func1 = "sup_edit";
+        $func2 = "cus_edit";
+        if(!$this->check_function($func1)  && !$this->check_function($func2))
+        {
+            return redirect()->route('unauthorized');
+        }
+        //
+       
+        
+        if (isset($request->date1)) {
+            $data['date1'] = trim($request->date1); 
+            $data['date1'] = str_replace('/', '-', $data['date1']); // Chuyển dấu "/" thành "-"
+            
+            // Chuyển đổi từ dd-mm-yyyy sang yyyy-mm-dd
+            $parts = explode('-', $data['date1']);
+            if (count($parts) === 3) {
+                $data['date1'] = "{$parts[2]}-{$parts[1]}-{$parts[0]}"; 
+            } else {
+                $data['date1'] = date("Y-m-d", strtotime("-12 month")); // Mặc định nếu lỗi
+            }
+        } else {
+            $data['date1'] = date("Y-m-d", strtotime("-12 month"));
+        }
+        
+        if (isset($request->date2)) {
+            $data['date2'] = trim($request->date2);
+            $data['date2'] = str_replace('/', '-', $data['date2']);
+            
+            $parts = explode('-', $data['date2']);
+            if (count($parts) === 3) {
+                $data['date2'] = "{$parts[2]}-{$parts[1]}-{$parts[0]}";
+            } else {
+                $data['date2'] = date("Y-m-d"); // Mặc định nếu lỗi
+            }
+        } else {
+            $data['date2'] = date("Y-m-d");
+        }
+        $id = auth()->id();
+        $data['user'] = auth()->user();
+        if( $data['user'])
+        {
+            $data['active_menu']="user_add";
+            
+            $data['suptrans'] = \App\Models\SupTransaction::where('supplier_id', $id)
+            ->where('is_delete', 0)
+            ->whereRaw("DATEDIFF(created_at, ?) >= 0", [ $data['date1']])
+            ->whereRaw("DATEDIFF(created_at, ?) <= 0", [ $data['date2']])
+            ->orderBy('id', 'asc')
+             ->get();
+            // dd($request->date1, $data['date1'],$data['date2'], $data['suptrans'] );
+            return \Maatwebsite\Excel\Facades\Excel::download(new SupTransExport( $data['suptrans'],$data['user']), 'baocao_congno_'. Str::slug($data['user']->full_name).'.xlsx');
+        }
+    }
+    public function viewsuptrans(Request $request)
     {
         $data['detail'] = \App\Models\SettingDetail::find(1);
         $data['categories'] = \App\Models\Category::where('status', 'active')->where('parent_id', null)->get();
         ////
-        $data['pagetitle'] = "Đơn hàng";
+        $data['pagetitle'] = "Danh sách công nợ";
+        $data['page_up_title'] = "Danh sách công nợ";
+        
         $data['links'] = array();
+        $user  = auth()->user();
+
+        if (isset($request->date1)) {
+            $data['date1'] = trim($request->date1); 
+            $data['date1'] = str_replace('/', '-', $data['date1']); // Chuyển dấu "/" thành "-"
+            
+            // Chuyển đổi từ dd-mm-yyyy sang yyyy-mm-dd
+            $parts = explode('-', $data['date1']);
+            if (count($parts) === 3) {
+                $data['date1'] = "{$parts[2]}-{$parts[1]}-{$parts[0]}"; 
+            } else {
+                $data['date1'] = date("Y-m-d", strtotime("-12 month")); // Mặc định nếu lỗi
+            }
+        } else {
+            $data['date1'] = date("Y-m-d", strtotime("-12 month"));
+        }
+        
+        if (isset($request->date2)) {
+            $data['date2'] = trim($request->date2);
+            $data['date2'] = str_replace('/', '-', $data['date2']);
+            
+            $parts = explode('-', $data['date2']);
+            if (count($parts) === 3) {
+                $data['date2'] = "{$parts[2]}-{$parts[1]}-{$parts[0]}";
+            } else {
+                $data['date2'] = date("Y-m-d"); // Mặc định nếu lỗi
+            }
+        } else {
+            $data['date2'] = date("Y-m-d");
+        }
+        $data['user'] = auth()->user();
+        $data['profile'] =   $data['user'] ;
+       
+        $data['suptrans'] = \App\Models\SupTransaction::where('supplier_id', auth()->id())
+        ->where('is_delete', 0)
+        ->whereRaw("DATEDIFF(created_at, ?) >= 0", [ $data['date1']])
+        ->whereRaw("DATEDIFF(created_at, ?) <= 0", [ $data['date2']])
+        ->orderBy('id', 'desc')
+        ->paginate(20)
+        ->withQueryString();
+        return view($this->front_view . '.profile.suptrans', $data);
+       
+        
+    }
+    public function viewWarehouseout()
+    {
+        $data['detail'] = \App\Models\SettingDetail::find(1);
+        $data['categories'] = \App\Models\Category::where('status', 'active')->where('parent_id', null)->get();
+        ////
+        $data['pagetitle'] = "Danh sách đơn hàng hoàn thành";
+        $data['page_up_title'] = "Danh sách đơn hàng hoàn thành";
+        
+        $data['links'] = array();
+        $user  = auth()->user();
+        $data['profile'] = $user;
+     
         $link = new \App\Models\Links();
         $link->title = 'Đặt hàng';
         $link->url = '#';
@@ -383,8 +507,47 @@ class ProfileController extends  Controller
         if (! $user) {
             return redirect()->route('front.login');
         }
-        $sql  = "SELECT * from orders where customer_id = " . $user->id . "  ";
-        $data['orders'] =   DB::select($sql);
+        // $sql  = "SELECT * from orders where customer_id = " . $user->id . " order ";
+        // $data['orders'] =   DB::select($sql);
+        $data['wouts']=\App\Models\Warehouseout::orderBy('id','DESC')->where('customer_id',auth()->id())
+        ->where('status','<>','deleted')
+        ->paginate(5);
+        foreach ($data['wouts'] as $order) {
+            $details = \DB::select('select a.*, b.title, b.photo from (select * from order_details where wo_id =' . $order->id . ' ) as a left join products b on a.product_id = b.id');
+            $order->details = $details;
+        }
+
+        $sql_new_blog = "SELECT * from products where status = 'active' and stock >= 0  order by id desc LIMIT 6";
+        // return view($this->front_view.'.product.category',$data);
+        return view($this->front_view . '.profile.warehouseout', $data);
+    }
+
+    public function viewOrder()
+    {
+        $data['detail'] = \App\Models\SettingDetail::find(1);
+        $data['categories'] = \App\Models\Category::where('status', 'active')->where('parent_id', null)->get();
+        ////
+        $data['pagetitle'] = "Danh sách đơn hàng đang xử lý";
+        $data['page_up_title'] = "Danh sách đơn hàng đang xử lý";
+        
+        $data['links'] = array();
+        $user  = auth()->user();
+        $data['profile'] = $user;
+     
+        $link = new \App\Models\Links();
+        $link->title = 'Đặt hàng';
+        $link->url = '#';
+        array_push($data['links'], $link);
+
+        $user = auth()->user();
+        if (! $user) {
+            return redirect()->route('front.login');
+        }
+        // $sql  = "SELECT * from orders where customer_id = " . $user->id . " order ";
+        // $data['orders'] =   DB::select($sql);
+        $data['orders']=\App\Models\Order::orderBy('id','DESC')
+        ->where('status','<>','done')->where('customer_id',auth()->id())
+        ->paginate(5);
         foreach ($data['orders'] as $order) {
             $details = \DB::select('select a.*, b.title, b.photo from (select * from order_details where wo_id =' . $order->id . ' ) as a left join products b on a.product_id = b.id');
             $order->details = $details;

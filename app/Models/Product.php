@@ -12,7 +12,9 @@ class Product extends Model
 
     public static function deleteProduct($pro_id){
         $product = Product::find($pro_id);
-        if($product != null && $product->stock > 0)
+        $details = \DB::select('select * from inventory_details where product_id = '.$pro_id);
+
+        if(count($details)> 0)
             return 0;
         else
         {

@@ -45,7 +45,7 @@
                              <div  >
                                  <h3 style="margin-bottom: 10px;">Cách 1: Mở app ngân hàng/ Ví và quét mã QR</h3>
                                  <div style="border: 1px solid #ddd; padding: 10px; display: inline-block; border-radius: 10px;">
-                                     <img src="https://qr.sepay.vn/img?acc=stk&bank=ACB&amount={{$order->price}}&des={{$order->code}}&template=compact&download=true" alt="QR Code" style="width: 200px; height: 200px;">
+                                     <img src="https://qr.sepay.vn/img?acc=221755419&bank=ACB&amount={{$order->price}}&des={{$order->code}}&template=compact&download=true" alt="QR Code" style="width: 200px; height: 200px;">
                                  </div>
                                 
                              </div>
@@ -56,15 +56,15 @@
                                  <table style="width: 100%; border-collapse: collapse;">
                                      <tr>
                                          <td style="padding: 5px 0; font-weight: bold;">Ngân hàng:</td>
-                                         <td style="padding: 5px 0;">ACB</td>
+                                         <td style="padding: 5px 0;">{{env('SEPAY_BANKNAME')}}</td>
                                      </tr>
                                      <tr>
                                          <td style="padding: 5px 0; font-weight: bold;">Thụ hưởng:</td>
-                                         <td style="padding: 5px 0;">tên tk</td>
+                                         <td style="padding: 5px 0;">{{env('SEPAY_BANKACCOUNT')}}</td>
                                      </tr>
                                      <tr>
                                          <td style="padding: 5px 0; font-weight: bold;">Số tài khoản:</td>
-                                         <td style="padding: 5px 0;">số tk</td>
+                                         <td style="padding: 5px 0;">{{env('SEPAY_BANKNUM')}}</td>
                                      </tr>
                                      <tr>
                                          <td style="padding: 5px 0; font-weight: bold;">Số tiền:</td>
@@ -86,7 +86,7 @@
                              Trạng thái: <span style="color: #007bff;">Chờ thanh toán...</span> 🔄
                          </p>
                          <p id ='success_pay_box' style="display:none; text-align: center; margin-top: 20px; font-size: 14px; color: #666;">
-                            Trạng thái: <span style="color:green;">Đã thanh toán thành công!Hãy đến <a href=" ">Xem trạng thái đơn hàng!</span>  
+                            Trạng thái: <span style="color:green;">Đã thanh toán thành công!Hãy đến <a href="{{route('front.profile.order')}}">Xem trạng thái đơn hàng!</span>  
                         </p>
                     </div>
                        <!-- Form Thanh Toán -->
@@ -127,7 +127,7 @@
         if(pay_status == 'Unpaid') {
              $.ajax({
                   type: "POST",
-                  data: {code: '{{$order->code}}' },
+                  data: {code: '{{$order->code}}',id:{{$order->id}} },
                   url: "{{route('payment.kiemtradon') .'?_token='.csrf_token()}}",
                   dataType:"json",
                   success: function(data){

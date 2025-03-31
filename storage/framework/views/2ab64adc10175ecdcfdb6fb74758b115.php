@@ -29,11 +29,12 @@
                 break;  
             ?>
                 <li> 
-                    <div class="media"> 
-                        <a href="#"><img alt="" class="me-3" src="<?php echo e($photos[0]); ?> "></a>
-                        <div class="media-body">  
-                            <a href="#">  <h4><?php echo e($pro->title); ?></h4>  </a> 
-                            <h4><span><?php echo e($pro->quantity); ?> x  <?php echo e(number_format($pro->price,0,".",",")); ?> </span></h4>
+                    <div class="cart-product">
+                        <img alt="" class="cart-product-image" src="<?php echo e($photos[0]); ?>">
+                        
+                        <div class="cart-product-info">
+                            <a href="#"><h6 class="cart-product-title"><?php echo e($pro->title); ?></h6></a>
+                            <h6><span><?php echo e($pro->quantity); ?> x <?php echo e(number_format($pro->price, 0, ".", ",")); ?></span></h6>
                         </div>
                     </div>  
                      

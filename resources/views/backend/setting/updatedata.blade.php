@@ -56,6 +56,12 @@
         <button type="submit" class ="btn">Cập nhật phiên bản từ 1 lên 2</button>
         </form>
     </div>
+    <div class="mt-3">
+        <form action="{{route('setting.generatekey')}}" method = "post">
+         @csrf
+        <button type="submit" class ="btn">Tạo key</button>
+        </form>
+    </div>
 </div>
 @endsection
 
